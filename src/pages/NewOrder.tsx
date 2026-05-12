@@ -52,14 +52,27 @@ export default function NewOrder() {
   })
 
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
-  const [newClientData, setNewClientData] = useState<Partial<Client>>({
+  const [newClientData, setNewClientData] = useState<Partial<any>>({
     name: '',
     document: '',
+    responsible: '',
     segment: '',
+    category: 'Normal',
     phone: '',
+    whatsapp: '',
+    email: '',
+    address: '',
+    neighborhood: '',
     city: 'São Luís',
     state: 'MA',
+    notes: '',
   })
+
+  const [filterNeighborhood, setFilterNeighborhood] = useState('')
+  const [filterSegment, setFilterSegment] = useState('')
+  const uniqueNeighborhoods = Array.from(
+    new Set(clients.map((c: any) => c.neighborhood).filter(Boolean)),
+  ) as string[]
 
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -84,21 +97,34 @@ export default function NewOrder() {
       setNewClientData({
         name: '',
         document: '',
+        responsible: '',
         segment: '',
+        category: 'Normal',
         phone: '',
+        whatsapp: '',
+        email: '',
+        address: '',
+        neighborhood: '',
         city: 'São Luís',
         state: 'MA',
+        notes: '',
       })
     } catch (err: any) {
       toast({ title: 'Erro ao cadastrar', description: err.message, variant: 'destructive' })
     }
   }
 
-  const filteredClients = clients.filter(
-    (c: Client) =>
-      c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
-      c.document.includes(searchClient),
-  )
+  const filteredClients = clients.filter((c: any) => {
+    const matchesSearch =
+      c.name.toLowerCase().includes(searchClient.toLowerCase()) || c.document.includes(searchClient)
+    const matchesNeighborhood =
+      !filterNeighborhood ||
+      filterNeighborhood === 'all' ||
+      (c.neighborhood && c.neighborhood.toLowerCase().includes(filterNeighborhood.toLowerCase()))
+    const matchesSegment =
+      !filterSegment || (c.segment && c.segment.toLowerCase() === filterSegment.toLowerCase())
+    return matchesSearch && matchesNeighborhood && matchesSegment
+  })
 
   const updateCart = (productId: string, quantity: number, forcePrice?: number) => {
     const p = products.find((x: Product) => x.id === productId)!
@@ -128,6 +154,24 @@ export default function NewOrder() {
   const subtotal = cart.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0)
 
   const [submitting, setSubmitting] = useState(false)
+
+  const handleNextStep = () => {
+    if (step === 2) {
+      const invalidItems = cart.filter((item) => {
+        const p = products.find((x: Product) => x.id === item.productId)
+        return p && item.quantity < p.minQuantity
+      })
+      if (invalidItems.length > 0) {
+        return toast({
+          title: 'Atenção',
+          description:
+            'Alguns itens estão abaixo da quantidade mínima. Ajuste as quantidades para prosseguir.',
+          variant: 'destructive',
+        })
+      }
+    }
+    setStep((s) => Math.min(3, s + 1))
+  }
 
   const handleSubmit = async () => {
     if (!details.deliveryDate || !details.paymentMethod)
@@ -187,56 +231,130 @@ export default function NewOrder() {
                     <DialogTitle>Cadastro Rápido de Cliente</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleCreateClient} className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label>Razão Social / Nome</Label>
-                      <Input
-                        required
-                        value={newClientData.name}
-                        onChange={(e) =>
-                          setNewClientData({ ...newClientData, name: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>CNPJ / CPF</Label>
-                      <Input
-                        required
-                        value={newClientData.document}
-                        onChange={(e) =>
-                          setNewClientData({ ...newClientData, document: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Telefone / WhatsApp</Label>
-                      <Input
-                        value={newClientData.phone}
-                        onChange={(e) =>
-                          setNewClientData({ ...newClientData, phone: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Segmento</Label>
-                      <Select
-                        value={newClientData.segment}
-                        onValueChange={(v) => setNewClientData({ ...newClientData, segment: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Mercadinho">Mercadinho</SelectItem>
-                          <SelectItem value="Depósito de bebidas">Depósito de bebidas</SelectItem>
-                          <SelectItem value="Restaurante">Restaurante</SelectItem>
-                          <SelectItem value="Distribuidora">Distribuidora</SelectItem>
-                          <SelectItem value="Outros">Outros</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto px-1 pb-2">
+                      <div className="space-y-2">
+                        <Label>Razão Social / Nome *</Label>
+                        <Input
+                          required
+                          value={newClientData.name}
+                          onChange={(e) =>
+                            setNewClientData({ ...newClientData, name: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>CNPJ / CPF *</Label>
+                        <Input
+                          required
+                          value={newClientData.document}
+                          onChange={(e) =>
+                            setNewClientData({ ...newClientData, document: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Pessoa Responsável</Label>
+                        <Input
+                          value={newClientData.responsible}
+                          onChange={(e) =>
+                            setNewClientData({ ...newClientData, responsible: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Segmento</Label>
+                        <Select
+                          value={newClientData.segment}
+                          onValueChange={(v) => setNewClientData({ ...newClientData, segment: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Mercadinho">Mercadinho</SelectItem>
+                            <SelectItem value="Depósito de bebidas">Depósito de bebidas</SelectItem>
+                            <SelectItem value="Restaurante">Restaurante</SelectItem>
+                            <SelectItem value="Distribuidora">Distribuidora</SelectItem>
+                            <SelectItem value="Outros">Outros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Categoria</Label>
+                        <Select
+                          value={newClientData.category}
+                          onValueChange={(v) => setNewClientData({ ...newClientData, category: v })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Normal">Normal</SelectItem>
+                            <SelectItem value="Revenda">Revenda</SelectItem>
+                            <SelectItem value="VIP">VIP</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Telefone</Label>
+                        <Input
+                          value={newClientData.phone}
+                          onChange={(e) =>
+                            setNewClientData({ ...newClientData, phone: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>WhatsApp</Label>
+                        <Input
+                          value={newClientData.whatsapp}
+                          onChange={(e) =>
+                            setNewClientData({ ...newClientData, whatsapp: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label>Endereço Completo</Label>
+                        <Input
+                          value={newClientData.address}
+                          onChange={(e) =>
+                            setNewClientData({ ...newClientData, address: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Bairro</Label>
+                        <Input
+                          value={newClientData.neighborhood}
+                          onChange={(e) =>
+                            setNewClientData({ ...newClientData, neighborhood: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2 grid grid-cols-2 gap-2">
+                        <div>
+                          <Label>Cidade</Label>
+                          <Input
+                            value={newClientData.city}
+                            onChange={(e) =>
+                              setNewClientData({ ...newClientData, city: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>UF</Label>
+                          <Input
+                            value={newClientData.state}
+                            onChange={(e) =>
+                              setNewClientData({ ...newClientData, state: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
                     </div>
                     <Button
                       type="submit"
-                      className="w-full bg-maxpet-green hover:bg-green-600 text-white"
+                      className="w-full h-12 text-lg bg-maxpet-green hover:bg-green-600 text-white shadow-md"
                     >
                       Salvar e Selecionar
                     </Button>
@@ -244,14 +362,31 @@ export default function NewOrder() {
                 </DialogContent>
               </Dialog>
             </div>
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <Input
-                placeholder="Buscar cliente..."
-                className="pl-10 h-12 bg-white"
-                value={searchClient}
-                onChange={(e) => setSearchClient(e.target.value)}
-              />
+            <div className="flex gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Input
+                  placeholder="Buscar cliente..."
+                  className="pl-10 h-12 bg-white"
+                  value={searchClient}
+                  onChange={(e) => setSearchClient(e.target.value)}
+                />
+              </div>
+              <div className="w-1/3 min-w-[120px]">
+                <Select value={filterNeighborhood} onValueChange={setFilterNeighborhood}>
+                  <SelectTrigger className="h-12 bg-white">
+                    <SelectValue placeholder="Bairro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Bairros</SelectItem>
+                    {uniqueNeighborhoods.map((n) => (
+                      <SelectItem key={n} value={n}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="space-y-3">
               {filteredClients.map((c: Client) => (
@@ -460,7 +595,7 @@ export default function NewOrder() {
         {step < 3 ? (
           <Button
             className="flex-1 h-12 text-base bg-maxpet-blue hover:bg-maxpet-navy"
-            onClick={() => setStep((s) => Math.min(3, s + 1))}
+            onClick={handleNextStep}
             disabled={(step === 1 && !selectedClient) || (step === 2 && cart.length === 0)}
           >
             Próximo <ChevronRight className="ml-2" />

@@ -131,6 +131,22 @@ export default function CustomerForm() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>Categoria</Label>
+                <Select
+                  value={(formData as any).category || 'Normal'}
+                  onValueChange={(v) => setFormData({ ...formData, category: v } as any)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Normal">Normal</SelectItem>
+                    <SelectItem value="Revenda">Revenda</SelectItem>
+                    <SelectItem value="VIP">VIP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <h3 className="font-bold text-maxpet-navy mt-6 mb-2 border-b pb-2">

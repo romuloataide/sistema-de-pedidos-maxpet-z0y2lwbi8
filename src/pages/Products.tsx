@@ -117,16 +117,22 @@ export default function Products() {
               </Badge>
             </div>
             <CardContent className="p-6 flex-1 flex flex-col">
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-start mb-2">
                 <h3 className="font-bold text-xl text-maxpet-navy leading-tight">{p.name}</h3>
                 <span
-                  className={`text-xs font-bold px-2 py-1 rounded-full ${p.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                  className={`text-xs font-bold px-2 py-1 rounded-full ${p.stock >= p.minQuantity ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
                 >
                   Estoque: {p.stock}
                 </span>
               </div>
 
-              <div className="text-sm text-gray-600 mb-6 flex-1 grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-lg">
+              {p.stock < p.minQuantity && (
+                <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg mb-4 text-xs font-bold flex items-center border border-red-100">
+                  <span className="mr-2">⚠️</span> Estoque crítico! (Abaixo de {p.minQuantity})
+                </div>
+              )}
+
+              <div className="text-sm text-gray-600 mb-6 flex-1 grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-lg mt-2">
                 <p>
                   <span className="font-semibold">Bocal:</span>
                   <br />

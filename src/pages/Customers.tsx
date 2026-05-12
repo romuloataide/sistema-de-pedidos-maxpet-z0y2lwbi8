@@ -147,9 +147,19 @@ export default function Customers() {
                   <h3 className="font-bold text-maxpet-navy text-lg line-clamp-1 group-hover:text-maxpet-blue transition-colors flex-1">
                     {c.name}
                   </h3>
-                  <Badge variant="outline" className="bg-gray-50 ml-2">
-                    {c.segment}
-                  </Badge>
+                  <div className="flex flex-col gap-1 ml-2 items-end">
+                    <Badge variant="outline" className="bg-gray-50 whitespace-nowrap">
+                      {c.segment}
+                    </Badge>
+                    {(c as any).category && (c as any).category !== 'Normal' && (
+                      <Badge
+                        variant="outline"
+                        className={`whitespace-nowrap ${(c as any).category === 'VIP' ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-purple-100 text-purple-700 border-purple-200'}`}
+                      >
+                        {(c as any).category}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2 text-sm text-gray-600 mb-4">
                   <p>CNPJ/CPF: {formatDocument(c.document)}</p>
