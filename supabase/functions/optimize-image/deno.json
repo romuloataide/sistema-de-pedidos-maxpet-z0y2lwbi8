@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "jsr:@supabase/functions-js/edge-runtime.d.ts": "jsr:@supabase/functions-js/edge-runtime.d.ts",
+    "imagescript": "https://deno.land/x/imagescript@1.2.9/mod.ts"
+  }
+}
