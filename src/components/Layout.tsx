@@ -14,15 +14,16 @@ import useMainStore from '@/stores/main'
 
 export default function Layout() {
   const location = useLocation()
-  const { settings } = useMainStore()
+  const { settings, profile } = useMainStore()
+  const isAdmin = profile?.role === 'admin'
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Clientes', path: '/clientes', icon: Users },
     { name: 'Produtos', path: '/produtos', icon: Package },
     { name: 'Pedidos', path: '/pedidos', icon: ShoppingCart },
-    { name: 'Relatórios', path: '/relatorios', icon: BarChart3 },
-    { name: 'Configurações', path: '/configuracoes', icon: Settings },
+    ...(isAdmin ? [{ name: 'Relatórios', path: '/relatorios', icon: BarChart3 }] : []),
+    ...(isAdmin ? [{ name: 'Configurações', path: '/configuracoes', icon: Settings }] : []),
   ]
 
   return (
@@ -67,10 +68,14 @@ export default function Layout() {
         <header className="h-16 flex items-center justify-between px-4 md:px-8 bg-white border-b print:hidden shadow-sm z-10">
           <h1 className="text-lg md:text-xl font-bold text-maxpet-navy">Sistema de Vendas</h1>
           <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-full border">
-            <div className="w-8 h-8 rounded-full bg-maxpet-green text-white flex items-center justify-center font-bold text-sm">
-              V
+            <div
+              className={`w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-sm ${isAdmin ? 'bg-maxpet-navy' : 'bg-maxpet-green'}`}
+            >
+              {isAdmin ? 'A' : 'V'}
             </div>
-            <span className="text-sm font-semibold text-maxpet-navy hidden sm:block">Vendedor</span>
+            <span className="text-sm font-semibold text-maxpet-navy hidden sm:block">
+              {profile?.name || (isAdmin ? 'Administrador' : 'Vendedor')}
+            </span>
           </div>
         </header>
 

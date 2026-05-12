@@ -9,7 +9,9 @@ import React, {
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 
-export type Seller = { id: string; name: string }
+export type Profile = { id: string; email: string; name: string; role: 'admin' | 'seller' }
+export type Seller = { id: string; name: string; commissionRate: number }
+export type Expense = { id: string; description: string; amount: number; date: string }
 export type Client = {
   id: string
   name: string
@@ -36,6 +38,7 @@ export type Product = {
   unitPriceCento: number
   unitPriceMin: number
   minQuantity: number
+  stock: number
   imageUrl: string
 }
 export type OrderStatus =
@@ -75,9 +78,11 @@ export const StoreContext = createContext<any>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [clients, setClients] = useState<Client[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
   const [settings, setSettings] = useState<Settings | null>(null)
   const [sellers, setSellers] = useState<Seller[]>([])
   const [loading, setLoading] = useState(true)
@@ -86,18 +91,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!user) return
     const fetchData = async () => {
       setLoading(true)
+      const [resClients, resProducts, resOrders, resSettings, resSellers, resExpenses, resProfile] =
+        await Promise.all([
+          supabase.from('clients').select('*'),
+          supabase.from('products').select('*'),
+          supabase
+            .from('orders')
+            .select('*, items:order_items(*)')
+            .order('created_at', { ascending: false }),
+          supabase.from('company_settings').select('*').limit(1).single(),
+          supabase.from('sellers').select('*'),
+          supabase.from('expenses').select('*').order('date', { ascending: false }),
+          supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+        ])
 
-      const [resClients, resProducts, resOrders, resSettings, resSellers] = await Promise.all([
-        supabase.from('clients').select('*'),
-        supabase.from('products').select('*'),
-        supabase
-          .from('orders')
-          .select('*, items:order_items(*)')
-          .order('created_at', { ascending: false }),
-        supabase.from('company_settings').select('*').limit(1).single(),
-        supabase.from('sellers').select('*'),
-      ])
-
+      if (resProfile.data) setProfile(resProfile.data as Profile)
       if (resClients.data)
         setClients(resClients.data.map((c) => ({ ...c, whatsapp: c.whatsapp || '' })))
       if (resProducts.data)
@@ -113,6 +121,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             unitPriceCento: p.unit_price_cento,
             unitPriceMin: p.unit_price_min,
             minQuantity: p.min_quantity,
+            stock: p.stock || 0,
             imageUrl: p.image_url,
           })),
         )
@@ -147,12 +156,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           email: resSettings.data.email,
           logoUrl: resSettings.data.logo_url || '',
         })
-      if (resSellers.data) setSellers(resSellers.data)
+      if (resSellers.data)
+        setSellers(
+          resSellers.data.map((s) => ({
+            id: s.id,
+            name: s.name,
+            commissionRate: s.commission_rate,
+          })),
+        )
+      if (resExpenses.data) setExpenses(resExpenses.data)
 
       setLoading(false)
     }
     fetchData()
   }, [user])
+
+  const uploadImage = async (file: File) => {
+    const ext = file.name.split('.').pop()
+    const fileName = `images/${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${ext}`
+    const { error } = await supabase.storage.from('assets').upload(fileName, file)
+    if (error) throw error
+    const { data: urlData } = supabase.storage.from('assets').getPublicUrl(fileName)
+    return urlData.publicUrl
+  }
 
   const addClient = async (c: Omit<Client, 'id'>) => {
     const { data } = await supabase.from('clients').insert([c]).select().single()
@@ -174,6 +200,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       unit_price_cento: p.unitPriceCento,
       unit_price_min: p.unitPriceMin,
       min_quantity: p.minQuantity,
+      stock: p.stock,
       image_url: p.imageUrl,
     }
     const { data } = await supabase.from('products').insert([payload]).select().single()
@@ -191,7 +218,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (p.unitPriceCento !== undefined) payload.unit_price_cento = p.unitPriceCento
     if (p.unitPriceMin !== undefined) payload.unit_price_min = p.unitPriceMin
     if (p.minQuantity !== undefined) payload.min_quantity = p.minQuantity
-    if (p.imageUrl) payload.image_url = p.imageUrl
+    if (p.stock !== undefined) payload.stock = p.stock
+    if (p.imageUrl !== undefined) payload.image_url = p.imageUrl
 
     await supabase.from('products').update(payload).eq('id', id)
     setProducts(products.map((x) => (x.id === id ? { ...x, ...p } : x)))
@@ -226,6 +254,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           unit_price: i.unitPrice,
         })),
       )
+
+      // Deduct stock immediately
+      for (const item of o.items) {
+        const p = products.find((x) => x.id === item.productId)
+        if (p) {
+          const newStock = p.stock - item.quantity
+          await supabase.from('products').update({ stock: newStock }).eq('id', p.id)
+          setProducts((prev) =>
+            prev.map((prod) => (prod.id === p.id ? { ...prod, stock: newStock } : prod)),
+          )
+        }
+      }
     }
     const newOrder = { ...o, id: data!.id, shortId, createdAt: data!.created_at }
     setOrders([newOrder, ...orders])
@@ -233,8 +273,60 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }
 
   const updateOrderStatus = async (id: string, status: OrderStatus) => {
+    const order = orders.find((o) => o.id === id)
+    if (status === 'Cancelado' && order?.status !== 'Cancelado') {
+      // Restore stock
+      for (const item of order.items) {
+        const p = products.find((x) => x.id === item.productId)
+        if (p) {
+          const newStock = p.stock + item.quantity
+          await supabase.from('products').update({ stock: newStock }).eq('id', p.id)
+          setProducts((prev) =>
+            prev.map((prod) => (prod.id === p.id ? { ...prod, stock: newStock } : prod)),
+          )
+        }
+      }
+    }
     await supabase.from('orders').update({ status }).eq('id', id)
     setOrders(orders.map((o) => (o.id === id ? { ...o, status } : o)))
+  }
+
+  const removeOrder = async (id: string) => {
+    const order = orders.find((o) => o.id === id)
+    if (order && order.status !== 'Cancelado') {
+      // Restore stock before deleting
+      for (const item of order.items) {
+        const p = products.find((x) => x.id === item.productId)
+        if (p) {
+          const newStock = p.stock + item.quantity
+          await supabase.from('products').update({ stock: newStock }).eq('id', p.id)
+          setProducts((prev) =>
+            prev.map((prod) => (prod.id === p.id ? { ...prod, stock: newStock } : prod)),
+          )
+        }
+      }
+    }
+    await supabase.from('orders').delete().eq('id', id)
+    setOrders(orders.filter((o) => o.id !== id))
+  }
+
+  const editOrderItems = async (orderId: string, newItems: OrderItem[], newTotal: number) => {
+    // Note: Stock adjustments on edit are complex, simplified here by not modifying stock for past orders
+    await supabase.from('order_items').delete().eq('order_id', orderId)
+    if (newItems.length > 0) {
+      await supabase.from('order_items').insert(
+        newItems.map((i) => ({
+          order_id: orderId,
+          product_id: i.productId,
+          quantity: i.quantity,
+          unit_price: i.unitPrice,
+        })),
+      )
+    }
+    await supabase.from('orders').update({ total: newTotal }).eq('id', orderId)
+    setOrders(
+      orders.map((o) => (o.id === orderId ? { ...o, items: newItems, total: newTotal } : o)),
+    )
   }
 
   const handleUpdateSettings = async (s: Settings) => {
@@ -252,34 +344,62 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSettings(s)
   }
 
-  const addSeller = async (name: string) => {
-    const { data } = await supabase.from('sellers').insert([{ name }]).select().single()
-    if (data) setSellers([...sellers, data])
+  const addSeller = async (name: string, commissionRate: number) => {
+    const { data } = await supabase
+      .from('sellers')
+      .insert([{ name, commission_rate: commissionRate }])
+      .select()
+      .single()
+    if (data)
+      setSellers([
+        ...sellers,
+        { id: data.id, name: data.name, commissionRate: data.commission_rate },
+      ])
   }
   const removeSeller = async (id: string) => {
     await supabase.from('sellers').delete().eq('id', id)
     setSellers(sellers.filter((s) => s.id !== id))
   }
 
+  const addExpense = async (description: string, amount: number, date: string) => {
+    const { data } = await supabase
+      .from('expenses')
+      .insert([{ description, amount, date }])
+      .select()
+      .single()
+    if (data) setExpenses([data, ...expenses])
+  }
+  const removeExpense = async (id: string) => {
+    await supabase.from('expenses').delete().eq('id', id)
+    setExpenses(expenses.filter((e) => e.id !== id))
+  }
+
   return createElement(
     StoreContext.Provider,
     {
       value: {
+        profile,
         clients,
         products,
         orders,
         settings,
         sellers,
+        expenses,
         loading,
+        uploadImage,
         addClient,
         removeClient,
         addProduct,
         updateProduct,
         addOrder,
         updateOrderStatus,
+        removeOrder,
+        editOrderItems,
         updateSettings: handleUpdateSettings,
         addSeller,
         removeSeller,
+        addExpense,
+        removeExpense,
       },
     },
     children,

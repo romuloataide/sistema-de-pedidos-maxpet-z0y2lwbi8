@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import useMainStore, { Order } from '@/stores/main'
+import useMainStore, { Order, OrderItem } from '@/stores/main'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -10,45 +12,104 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { formatCurrency, formatDate, formatDocument } from '@/lib/utils'
-import { ArrowLeft, Printer, Truck, Calendar, CreditCard, Box } from 'lucide-react'
+import {
+  ArrowLeft,
+  Printer,
+  Truck,
+  Calendar,
+  CreditCard,
+  Box,
+  MessageCircle,
+  Edit,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function OrderDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { orders, updateOrderStatus, clients, products, settings, sellers, loading } =
-    useMainStore()
+  const {
+    orders,
+    updateOrderStatus,
+    editOrderItems,
+    clients,
+    products,
+    settings,
+    sellers,
+    profile,
+    loading,
+  } = useMainStore()
+
+  const [isEditingItems, setIsEditingItems] = useState(false)
+  const [editingCart, setEditingCart] = useState<OrderItem[]>([])
 
   const order = orders.find((o: Order) => o.id === id)
-
   if (loading) return <div className="p-8 text-center">Carregando...</div>
   if (!order) return <div className="p-8 text-center">Pedido não encontrado.</div>
 
   const client = clients.find((c: any) => c.id === order.clientId)
   const seller = sellers.find((s: any) => s.id === order.sellerId)
+  const isAdmin = profile?.role === 'admin'
 
   const handleStatusChange = async (newStatus: string) => {
     await updateOrderStatus(id as string, newStatus as any)
     toast({ title: 'Status Atualizado', description: `O pedido agora está: ${newStatus}` })
   }
 
+  const handleWhatsApp = () => {
+    if (!client?.whatsapp && !client?.phone)
+      return toast({
+        title: 'Erro',
+        description: 'Cliente sem número cadastrado.',
+        variant: 'destructive',
+      })
+    const phone = (client.whatsapp || client.phone).replace(/\D/g, '')
+    const msg = `Olá ${client.name}! Seu pedido #${order.shortId} no valor de ${formatCurrency(order.total)} foi registrado com sucesso. Previsão de entrega: ${formatDate(order.deliveryDate)}.`
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  }
+
+  const handleStartEdit = () => {
+    setEditingCart(JSON.parse(JSON.stringify(order.items)))
+    setIsEditingItems(true)
+  }
+
+  const updateEditCart = (productId: string, quantity: number, unitPrice: number) => {
+    setEditingCart((prev) => {
+      const existing = prev.find((i) => i.productId === productId)
+      if (quantity <= 0) return prev.filter((i) => i.productId !== productId)
+      if (existing)
+        return prev.map((i) => (i.productId === productId ? { ...i, quantity, unitPrice } : i))
+      return [...prev, { productId, quantity, unitPrice }]
+    })
+  }
+
+  const handleSaveItems = async () => {
+    const newTotal = editingCart.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0)
+    await editOrderItems(order.id, editingCart, newTotal)
+    setIsEditingItems(false)
+    toast({ title: 'Itens Atualizados', description: 'Os itens do pedido foram salvos.' })
+  }
+
   return (
     <div className="animate-fade-in-up">
-      {/* Screen UI */}
       <div className="print:hidden max-w-4xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2">
               <ArrowLeft />
             </Button>
-            <h1 className="text-2xl font-black text-maxpet-navy">
-              Pedido #{order.shortId || order.id.slice(0, 8)}
-            </h1>
+            <h1 className="text-2xl font-black text-maxpet-navy">Pedido #{order.shortId}</h1>
             <Badge className="bg-maxpet-green">{order.status}</Badge>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <Select value={order.status} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-full sm:w-48 bg-white border-maxpet-blue text-maxpet-blue font-bold">
                 <SelectValue placeholder="Status" />
@@ -62,9 +123,15 @@ export default function OrderDetails() {
                 <SelectItem value="Cancelado">Cancelado</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              className="bg-[#25D366] hover:bg-[#128C7E] text-white shrink-0"
+              onClick={handleWhatsApp}
+            >
+              <MessageCircle className="w-4 h-4 sm:mr-2" />{' '}
+              <span className="hidden sm:inline">WhatsApp</span>
+            </Button>
             <Button className="bg-maxpet-navy text-white shrink-0" onClick={() => window.print()}>
-              <Printer className="w-4 h-4 sm:mr-2" />{' '}
-              <span className="hidden sm:inline">Gerar PDF</span>
+              <Printer className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">PDF</span>
             </Button>
           </div>
         </div>
@@ -103,9 +170,99 @@ export default function OrderDetails() {
         </div>
 
         <Card className="border-0 shadow-sm overflow-hidden">
-          <div className="bg-[#EBF2F7] px-6 py-4 border-b flex items-center gap-3">
-            <Box className="text-maxpet-navy" />
-            <h2 className="font-bold text-maxpet-navy text-lg">Itens do Pedido</h2>
+          <div className="bg-[#EBF2F7] px-6 py-4 border-b flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <Box className="text-maxpet-navy" />
+              <h2 className="font-bold text-maxpet-navy text-lg">Itens do Pedido</h2>
+            </div>
+            {isAdmin && (
+              <Dialog
+                open={isEditingItems}
+                onOpenChange={(o) => {
+                  if (!o) setIsEditingItems(false)
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStartEdit}
+                    className="text-maxpet-blue border-maxpet-blue bg-white"
+                  >
+                    <Edit className="w-4 h-4 mr-2" /> Editar Itens
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Editar Itens do Pedido</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    {products.map((p: any) => {
+                      const item = editingCart.find((i) => i.productId === p.id)
+                      const qty = item?.quantity || 0
+                      return (
+                        <div
+                          key={p.id}
+                          className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
+                        >
+                          <div>
+                            <p className="font-bold">
+                              {p.name} {p.size}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Min: {formatCurrency(p.unitPriceMin)} | Estoque: {p.stock}
+                            </p>
+                          </div>
+                          <div className="flex gap-4 items-center">
+                            <div>
+                              <p className="text-xs mb-1">Qtd</p>
+                              <Input
+                                type="number"
+                                className="w-20 h-9"
+                                value={qty || ''}
+                                placeholder="0"
+                                onChange={(e) =>
+                                  updateEditCart(
+                                    p.id,
+                                    parseInt(e.target.value) || 0,
+                                    item?.unitPrice || p.unitPriceMin,
+                                  )
+                                }
+                              />
+                            </div>
+                            {qty > 0 && (
+                              <div>
+                                <p className="text-xs mb-1">R$ Unit</p>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  className="w-24 h-9"
+                                  value={item?.unitPrice || ''}
+                                  onChange={(e) =>
+                                    updateEditCart(p.id, qty, parseFloat(e.target.value))
+                                  }
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="flex justify-between items-center border-t pt-4">
+                    <span className="font-black text-xl text-maxpet-navy">
+                      Total:{' '}
+                      {formatCurrency(
+                        editingCart.reduce((a, i) => a + i.quantity * i.unitPrice, 0),
+                      )}
+                    </span>
+                    <Button onClick={handleSaveItems} className="bg-maxpet-green text-white">
+                      Salvar Alterações
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
           <div className="p-0">
             <table className="w-full text-sm">
@@ -166,27 +323,24 @@ export default function OrderDetails() {
         )}
       </div>
 
-      {/* PRINT UI (A4 Document Format) */}
+      {/* PRINT UI (unchanged) */}
       <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-10 text-black font-sans leading-relaxed">
         <div className="flex justify-between items-center mb-8 border-b-4 border-maxpet-navy pb-6">
           <div>
             {settings?.logoUrl ? (
               <img src={settings.logoUrl} alt="Logo" className="h-16 object-contain" />
             ) : (
-              <>
-                <h1 className="text-4xl font-black italic tracking-tighter">
-                  Max<span className="text-maxpet-green">PET</span>
-                </h1>
-                <p className="text-sm font-bold text-gray-500 tracking-widest mt-1">EMBALAGENS</p>
-              </>
+              <h1 className="text-4xl font-black italic tracking-tighter">
+                Max<span className="text-maxpet-green">PET</span>
+              </h1>
             )}
           </div>
           <div className="text-right text-sm">
-            <p className="font-bold text-lg text-maxpet-navy">{settings.companyName}</p>
-            <p>CNPJ: {settings.document}</p>
-            <p>{settings.address}</p>
+            <p className="font-bold text-lg text-maxpet-navy">{settings?.companyName}</p>
+            <p>CNPJ: {settings?.document}</p>
+            <p>{settings?.address}</p>
             <p>
-              {settings.phone} | {settings.email}
+              {settings?.phone} | {settings?.email}
             </p>
           </div>
         </div>
@@ -213,9 +367,7 @@ export default function OrderDetails() {
               <tbody>
                 <tr>
                   <td className="py-1 font-semibold">Nº Pedido:</td>
-                  <td className="py-1 text-right font-bold text-maxpet-navy">
-                    #{order.shortId || order.id.slice(0, 8)}
-                  </td>
+                  <td className="py-1 text-right font-bold text-maxpet-navy">#{order.shortId}</td>
                 </tr>
                 <tr>
                   <td className="py-1 font-semibold">Emissão:</td>
@@ -275,14 +427,12 @@ export default function OrderDetails() {
             <p className="text-3xl font-black text-maxpet-navy">{formatCurrency(order.total)}</p>
           </div>
         </div>
-
         {order.notes && (
           <div className="mb-12">
             <p className="font-bold text-sm">Observações Comerciais:</p>
             <p className="text-sm italic">{order.notes}</p>
           </div>
         )}
-
         <div className="mt-24 flex justify-around text-center pt-8">
           <div className="w-64 border-t border-gray-400 pt-2">
             <p className="font-bold text-sm">{client?.name}</p>

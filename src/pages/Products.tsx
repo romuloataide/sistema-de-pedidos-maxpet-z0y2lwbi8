@@ -12,15 +12,16 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Edit } from 'lucide-react'
+import { Edit, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Products() {
-  const { products, updateProduct, addProduct } = useMainStore()
+  const { products, updateProduct, addProduct, uploadImage } = useMainStore()
   const { toast } = useToast()
   const [editing, setEditing] = useState<Partial<Product> | null>(null)
   const [open, setOpen] = useState(false)
   const [isNew, setIsNew] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,6 +35,21 @@ export default function Products() {
       toast({ title: 'Produto Atualizado' })
     }
     setOpen(false)
+  }
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !editing) return
+    try {
+      setUploading(true)
+      const url = await uploadImage(file)
+      setEditing({ ...editing, imageUrl: url })
+      toast({ title: 'Foto carregada!' })
+    } catch (err: any) {
+      toast({ title: 'Erro ao enviar', description: err.message, variant: 'destructive' })
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
@@ -56,6 +72,7 @@ export default function Products() {
                 unitPriceCento: 0,
                 unitPriceMin: 0,
                 minQuantity: 1,
+                stock: 0,
                 imageUrl: '',
               })
           }}
@@ -68,7 +85,13 @@ export default function Products() {
               <DialogTitle>Adicionar Novo Produto</DialogTitle>
             </DialogHeader>
             {editing && isNew && (
-              <ProductForm editing={editing} setEditing={setEditing} handleSave={handleSave} />
+              <ProductForm
+                editing={editing}
+                setEditing={setEditing}
+                handleSave={handleSave}
+                handlePhotoUpload={handlePhotoUpload}
+                uploading={uploading}
+              />
             )}
           </DialogContent>
         </Dialog>
@@ -78,17 +101,31 @@ export default function Products() {
         {products.map((p: Product) => (
           <Card key={p.id} className="overflow-hidden flex flex-col border-0 shadow-md">
             <div className="bg-[#EBF2F7] p-8 flex justify-center relative">
-              <img
-                src={p.imageUrl}
-                alt={p.name}
-                className="h-56 object-contain mix-blend-multiply drop-shadow-xl"
-              />
+              {p.imageUrl ? (
+                <img
+                  src={p.imageUrl}
+                  alt={p.name}
+                  className="h-56 object-contain mix-blend-multiply drop-shadow-xl"
+                />
+              ) : (
+                <div className="h-56 w-full flex items-center justify-center bg-gray-100 rounded text-gray-400">
+                  <ImageIcon size={48} />
+                </div>
+              )}
               <Badge className="absolute top-4 right-4 bg-maxpet-blue text-white text-sm px-3 py-1">
                 {p.size}
               </Badge>
             </div>
             <CardContent className="p-6 flex-1 flex flex-col">
-              <h3 className="font-bold text-xl text-maxpet-navy mb-4 leading-tight">{p.name}</h3>
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="font-bold text-xl text-maxpet-navy leading-tight">{p.name}</h3>
+                <span
+                  className={`text-xs font-bold px-2 py-1 rounded-full ${p.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                >
+                  Estoque: {p.stock}
+                </span>
+              </div>
+
               <div className="text-sm text-gray-600 mb-6 flex-1 grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-lg">
                 <p>
                   <span className="font-semibold">Bocal:</span>
@@ -104,29 +141,31 @@ export default function Products() {
                   <span className="font-semibold">Diâmetro:</span> {p.diameter}
                 </p>
               </div>
+
               <div className="bg-maxpet-navy text-white p-4 rounded-xl space-y-2 text-sm font-medium mb-4">
                 <div className="flex justify-between items-center">
-                  <span className="opacity-80">Milheiro:</span>{' '}
+                  <span className="opacity-80">Milheiro:</span>
                   <span className="text-lg">
                     {formatCurrency(p.unitPriceMilheiro)}
                     <span className="text-xs font-normal opacity-70">/un</span>
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="opacity-80">Cento:</span>{' '}
+                  <span className="opacity-80">Cento:</span>
                   <span className="text-lg">
                     {formatCurrency(p.unitPriceCento)}
                     <span className="text-xs font-normal opacity-70">/un</span>
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="opacity-80">{p.minQuantity} Unidades:</span>{' '}
+                  <span className="opacity-80">{p.minQuantity} Unidades:</span>
                   <span className="text-lg">
                     {formatCurrency(p.unitPriceMin)}
                     <span className="text-xs font-normal opacity-70">/un</span>
                   </span>
                 </div>
               </div>
+
               <Dialog
                 open={open && editing?.id === p.id}
                 onOpenChange={(o) => {
@@ -139,10 +178,10 @@ export default function Products() {
                     variant="outline"
                     className="w-full text-maxpet-blue border-maxpet-blue hover:bg-maxpet-blue hover:text-white transition-colors"
                   >
-                    <Edit className="w-4 h-4 mr-2" /> Editar Preços
+                    <Edit className="w-4 h-4 mr-2" /> Editar Detalhes
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Editar Produto: {p.name}</DialogTitle>
                   </DialogHeader>
@@ -151,6 +190,8 @@ export default function Products() {
                       editing={editing}
                       setEditing={setEditing}
                       handleSave={handleSave}
+                      handlePhotoUpload={handlePhotoUpload}
+                      uploading={uploading}
                     />
                   )}
                 </DialogContent>
@@ -167,96 +208,131 @@ function Badge({ children, className }: any) {
   return <span className={`rounded-full font-bold ${className}`}>{children}</span>
 }
 
-function ProductForm({ editing, setEditing, handleSave }: any) {
+function ProductForm({ editing, setEditing, handleSave, handlePhotoUpload, uploading }: any) {
   return (
-    <form onSubmit={handleSave} className="space-y-4 pt-4 h-[70vh] overflow-y-auto px-2">
-      <div className="space-y-2">
-        <Label>Nome do Produto</Label>
-        <Input
-          required
-          value={editing.name}
-          onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Tamanho (ml)</Label>
-          <Input
-            required
-            value={editing.size}
-            onChange={(e) => setEditing({ ...editing, size: e.target.value })}
-          />
+    <form onSubmit={handleSave} className="space-y-6 pt-4 max-h-[75vh] overflow-y-auto px-2">
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h3 className="font-bold border-b pb-2">Informações Gerais</h3>
+          <div className="space-y-2">
+            <Label>Nome do Produto</Label>
+            <Input
+              required
+              value={editing.name}
+              onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Estoque Atual</Label>
+            <Input
+              type="number"
+              required
+              value={editing.stock}
+              onChange={(e) => setEditing({ ...editing, stock: parseInt(e.target.value) || 0 })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Foto do Produto (Upload)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                disabled={uploading}
+              />
+              {uploading && <Loader2 className="w-4 h-4 animate-spin text-maxpet-blue" />}
+            </div>
+            {editing.imageUrl && (
+              <p className="text-xs text-green-600 font-semibold mt-1">Imagem carregada.</p>
+            )}
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label>Boca</Label>
-          <Input
-            value={editing.neck}
-            onChange={(e) => setEditing({ ...editing, neck: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Altura</Label>
-          <Input
-            value={editing.height}
-            onChange={(e) => setEditing({ ...editing, height: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Diâmetro</Label>
-          <Input
-            value={editing.diameter}
-            onChange={(e) => setEditing({ ...editing, diameter: e.target.value })}
-          />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label>URL da Imagem</Label>
-        <Input
-          value={editing.imageUrl}
-          onChange={(e) => setEditing({ ...editing, imageUrl: e.target.value })}
-        />
-      </div>
-      <h3 className="font-bold text-lg pt-4 border-t">Preços e Quantidades</h3>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Quantidade Mínima</Label>
-          <Input
-            type="number"
-            value={editing.minQuantity}
-            onChange={(e) => setEditing({ ...editing, minQuantity: parseInt(e.target.value) })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Preço Min. (un)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={editing.unitPriceMin}
-            onChange={(e) => setEditing({ ...editing, unitPriceMin: parseFloat(e.target.value) })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Preço Cento (un)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={editing.unitPriceCento}
-            onChange={(e) => setEditing({ ...editing, unitPriceCento: parseFloat(e.target.value) })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Preço Milheiro (un)</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={editing.unitPriceMilheiro}
-            onChange={(e) =>
-              setEditing({ ...editing, unitPriceMilheiro: parseFloat(e.target.value) })
-            }
-          />
+
+        <div className="space-y-4">
+          <h3 className="font-bold border-b pb-2">Especificações Técnicas</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Tamanho (ml/L)</Label>
+              <Input
+                required
+                value={editing.size}
+                onChange={(e) => setEditing({ ...editing, size: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Bocal</Label>
+              <Input
+                value={editing.neck}
+                onChange={(e) => setEditing({ ...editing, neck: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Altura</Label>
+              <Input
+                value={editing.height}
+                onChange={(e) => setEditing({ ...editing, height: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Diâmetro</Label>
+              <Input
+                value={editing.diameter}
+                onChange={(e) => setEditing({ ...editing, diameter: e.target.value })}
+              />
+            </div>
+          </div>
         </div>
       </div>
-      <Button type="submit" className="w-full bg-maxpet-green text-white">
+
+      <div className="space-y-4 pt-4 border-t">
+        <h3 className="font-bold text-lg">Preços e Quantidades</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label>Qtd. Mínima</Label>
+            <Input
+              type="number"
+              value={editing.minQuantity}
+              onChange={(e) => setEditing({ ...editing, minQuantity: parseInt(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Preço Min. (un)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={editing.unitPriceMin}
+              onChange={(e) => setEditing({ ...editing, unitPriceMin: parseFloat(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Preço Cento (un)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={editing.unitPriceCento}
+              onChange={(e) =>
+                setEditing({ ...editing, unitPriceCento: parseFloat(e.target.value) })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Preço Milheiro (un)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={editing.unitPriceMilheiro}
+              onChange={(e) =>
+                setEditing({ ...editing, unitPriceMilheiro: parseFloat(e.target.value) })
+              }
+            />
+          </div>
+        </div>
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full bg-maxpet-green hover:bg-green-600 text-white h-12 text-lg"
+      >
         Salvar Produto
       </Button>
     </form>

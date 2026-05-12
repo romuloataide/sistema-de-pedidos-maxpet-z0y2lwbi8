@@ -103,9 +103,19 @@ export default function CustomerDetails() {
         </CardContent>
       </Card>
 
-      <h2 className="text-xl font-bold text-maxpet-navy mt-8 mb-4">
-        Histórico de Pedidos ({clientOrders.length})
-      </h2>
+      <div className="mt-8 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h2 className="text-xl font-bold text-maxpet-navy">
+          Histórico de Pedidos ({clientOrders.length})
+        </h2>
+        <div className="bg-white px-4 py-2 rounded-lg shadow-sm border text-sm font-medium">
+          Total Gasto:{' '}
+          <span className="text-maxpet-green font-black ml-1 text-lg">
+            {formatCurrency(
+              clientOrders.filter((o) => o.status !== 'Cancelado').reduce((a, o) => a + o.total, 0),
+            )}
+          </span>
+        </div>
+      </div>
       <div className="space-y-3">
         {clientOrders.map((o: Order) => (
           <Link key={o.id} to={`/pedidos/${o.id}`}>

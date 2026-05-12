@@ -13,18 +13,21 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Search, PlusCircle, Calendar } from 'lucide-react'
+import { Search, PlusCircle, Calendar, Trash2 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 export default function Orders() {
-  const { orders, clients } = useMainStore()
+  const { orders, clients, removeOrder, profile } = useMainStore()
+  const { toast } = useToast()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('Todos')
+  const isAdmin = profile?.role === 'admin'
 
   const filtered = orders
     .filter((o: Order) => {
       const client = clients.find((c: any) => c.id === o.clientId)
       const matchesSearch =
-        client?.name.toLowerCase().includes(search.toLowerCase()) || o.id.includes(search)
+        client?.name.toLowerCase().includes(search.toLowerCase()) || o.shortId.includes(search)
       const matchesStatus = statusFilter === 'Todos' || o.status === statusFilter
       return matchesSearch && matchesStatus
     })
@@ -36,6 +39,14 @@ export default function Orders() {
     if (status === 'Separado para entrega') return 'bg-orange-500 text-white'
     if (status === 'Cancelado') return 'bg-red-500 text-white'
     return 'bg-maxpet-blue text-white'
+  }
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault() // prevent Link navigation
+    if (window.confirm('Tem certeza que deseja excluir este pedido? O estoque será devolvido.')) {
+      await removeOrder(id)
+      toast({ title: 'Pedido Excluído' })
+    }
   }
 
   return (
@@ -81,7 +92,7 @@ export default function Orders() {
         {filtered.map((o: Order) => {
           const client = clients.find((c: any) => c.id === o.clientId)
           return (
-            <Link key={o.id} to={`/pedidos/${o.id}`} className="block">
+            <Link key={o.id} to={`/pedidos/${o.id}`} className="block relative group">
               <Card className="hover:shadow-md transition-shadow border-0 shadow-sm">
                 <CardContent className="p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex-1">
@@ -90,7 +101,7 @@ export default function Orders() {
                         {client?.name || 'Desconhecido'}
                       </h3>
                       <span className="text-sm font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-                        #{o.id}
+                        #{o.shortId}
                       </span>
                     </div>
                     <div className="text-sm text-gray-500 flex flex-wrap gap-4">
@@ -107,7 +118,19 @@ export default function Orders() {
                     <p className="font-black text-xl text-maxpet-navy mb-2">
                       {formatCurrency(o.total)}
                     </p>
-                    <Badge className={getStatusColor(o.status)}>{o.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(o.status)}>{o.status}</Badge>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                          onClick={(e) => handleDelete(e, o.id)}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
