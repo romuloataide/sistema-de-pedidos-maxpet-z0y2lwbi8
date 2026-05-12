@@ -105,9 +105,9 @@ export default function NewOrder() {
                         <p className="text-xs text-gray-500 mb-3">Ref: {formatCurrency(p.unitPriceMin)} a {formatCurrency(p.unitPriceMilheiro)}/un</p>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none text-maxpet-navy" onClick={() => updateCart(p.id, Math.max(0, qty - (qty > 100 ? 100 : 25))))}><Minus size={16}/></Button>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none text-maxpet-navy" onClick={() => updateCart(p.id, Math.max(0, qty - (qty > 100 ? 100 : 25)))}><Minus size={16}/></Button>
                             <Input type="number" className="h-10 w-20 border-0 text-center font-bold bg-transparent focus-visible:ring-0" value={qty || ''} placeholder="0" onChange={e => updateCart(p.id, parseInt(e.target.value) || 0)} />
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none text-maxpet-navy" onClick={() => updateCart(p.id, qty + (qty >= 100 ? 100 : 25))}><Plus size={16}/></Button>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none text-maxpet-navy" onClick={() => updateCart(p.id, qty + (qty >= 100 ? 100 : 25)))}><Plus size={16}/></Button>
                           </div>
                           {qty > 0 && (
                             <div className="flex-1">
