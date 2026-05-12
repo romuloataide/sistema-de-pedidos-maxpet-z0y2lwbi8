@@ -1,14 +1,71 @@
 // AVOID UPDATING THIS FILE DIRECTLY. It is automatically generated.
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.1'
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
+      clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string | null
+          document: string
+          email: string | null
+          id: string
+          name: string
+          neighborhood: string | null
+          notes: string | null
+          phone: string | null
+          responsible: string | null
+          segment: string | null
+          state: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          document: string
+          email?: string | null
+          id?: string
+          name: string
+          neighborhood?: string | null
+          notes?: string | null
+          phone?: string | null
+          responsible?: string | null
+          segment?: string | null
+          state?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          document?: string
+          email?: string | null
+          id?: string
+          name?: string
+          neighborhood?: string | null
+          notes?: string | null
+          phone?: string | null
+          responsible?: string | null
+          segment?: string | null
+          state?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       clinic_settings: {
         Row: {
           address: string | null
@@ -81,6 +138,36 @@ export type Database = {
         }
         Relationships: []
       }
+      company_settings: {
+        Row: {
+          address: string
+          company_name: string
+          document: string
+          email: string
+          id: string
+          logo_url: string | null
+          phone: string
+        }
+        Insert: {
+          address: string
+          company_name: string
+          document: string
+          email: string
+          id?: string
+          logo_url?: string | null
+          phone: string
+        }
+        Update: {
+          address?: string
+          company_name?: string
+          document?: string
+          email?: string
+          id?: string
+          logo_url?: string | null
+          phone?: string
+        }
+        Relationships: []
+      }
       navigation_items: {
         Row: {
           created_at: string | null
@@ -117,13 +204,175 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'navigation_items_parent_id_fkey'
-            columns: ['parent_id']
+            foreignKeyName: "navigation_items_parent_id_fkey"
+            columns: ["parent_id"]
             isOneToOne: false
-            referencedRelation: 'navigation_items'
-            referencedColumns: ['id']
+            referencedRelation: "navigation_items"
+            referencedColumns: ["id"]
           },
         ]
+      }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          product_id: string
+          quantity?: number
+          unit_price?: number
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          delivery_date: string | null
+          id: string
+          internal_notes: string | null
+          notes: string | null
+          payment_method: string | null
+          seller_id: string | null
+          short_id: string
+          status: string
+          total: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          seller_id?: string | null
+          short_id: string
+          status?: string
+          total?: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          payment_method?: string | null
+          seller_id?: string | null
+          short_id?: string
+          status?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          diameter: string | null
+          height: string | null
+          id: string
+          image_url: string | null
+          min_quantity: number
+          name: string
+          neck: string | null
+          size: string | null
+          unit_price_cento: number
+          unit_price_milheiro: number
+          unit_price_min: number
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          diameter?: string | null
+          height?: string | null
+          id?: string
+          image_url?: string | null
+          min_quantity?: number
+          name: string
+          neck?: string | null
+          size?: string | null
+          unit_price_cento?: number
+          unit_price_milheiro?: number
+          unit_price_min?: number
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          diameter?: string | null
+          height?: string | null
+          id?: string
+          image_url?: string | null
+          min_quantity?: number
+          name?: string
+          neck?: string | null
+          size?: string | null
+          unit_price_cento?: number
+          unit_price_milheiro?: number
+          unit_price_min?: number
+        }
+        Relationships: []
+      }
+      sellers: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       site_content: {
         Row: {
@@ -165,31 +414,33 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
-    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -198,23 +449,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -223,23 +474,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -248,36 +499,36 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
-    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
-    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
@@ -285,6 +536,7 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
 
 // ====== DATABASE EXTENDED CONTEXT (auto-generated) ======
 // This section contains actual PostgreSQL column types, constraints, RLS policies,
@@ -296,6 +548,21 @@ export const Constants = {
 // --- COLUMN TYPES (actual PostgreSQL types) ---
 // Use this to know the real database type when writing migrations.
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: clients
+//   id: uuid (not null, default: gen_random_uuid())
+//   name: text (not null)
+//   responsible: text (nullable)
+//   document: text (not null)
+//   segment: text (nullable)
+//   address: text (nullable)
+//   neighborhood: text (nullable)
+//   city: text (nullable)
+//   state: text (nullable)
+//   phone: text (nullable)
+//   whatsapp: text (nullable)
+//   email: text (nullable)
+//   notes: text (nullable)
+//   created_at: timestamp with time zone (nullable, default: now())
 // Table: clinic_settings
 //   id: uuid (not null, default: gen_random_uuid())
 //   logo_url: text (nullable)
@@ -318,6 +585,14 @@ export const Constants = {
 //   sidebar_logo_url: text (nullable)
 //   header_logo_url: text (nullable)
 //   welcome_logo_url: text (nullable)
+// Table: company_settings
+//   id: uuid (not null, default: gen_random_uuid())
+//   company_name: text (not null)
+//   document: text (not null)
+//   address: text (not null)
+//   phone: text (not null)
+//   email: text (not null)
+//   logo_url: text (nullable)
 // Table: navigation_items
 //   id: uuid (not null, default: gen_random_uuid())
 //   parent_id: uuid (nullable)
@@ -328,6 +603,42 @@ export const Constants = {
 //   created_at: timestamp with time zone (nullable, default: now())
 //   updated_at: timestamp with time zone (nullable, default: now())
 //   icon_url: text (nullable)
+// Table: order_items
+//   id: uuid (not null, default: gen_random_uuid())
+//   order_id: uuid (not null)
+//   product_id: uuid (not null)
+//   quantity: integer (not null, default: 1)
+//   unit_price: numeric (not null, default: 0)
+// Table: orders
+//   id: uuid (not null, default: gen_random_uuid())
+//   short_id: text (not null)
+//   client_id: uuid (not null)
+//   seller_id: uuid (nullable)
+//   status: text (not null, default: 'Pedido registrado'::text)
+//   delivery_date: timestamp with time zone (nullable)
+//   payment_method: text (nullable)
+//   notes: text (nullable)
+//   internal_notes: text (nullable)
+//   total: numeric (not null, default: 0)
+//   created_at: timestamp with time zone (nullable, default: now())
+// Table: products
+//   id: uuid (not null, default: gen_random_uuid())
+//   name: text (not null)
+//   size: text (nullable)
+//   neck: text (nullable)
+//   height: text (nullable)
+//   diameter: text (nullable)
+//   unit_price_milheiro: numeric (not null, default: 0)
+//   unit_price_cento: numeric (not null, default: 0)
+//   unit_price_min: numeric (not null, default: 0)
+//   min_quantity: integer (not null, default: 1)
+//   image_url: text (nullable)
+//   active: boolean (nullable, default: true)
+//   created_at: timestamp with time zone (nullable, default: now())
+// Table: sellers
+//   id: uuid (not null, default: gen_random_uuid())
+//   name: text (not null)
+//   created_at: timestamp with time zone (nullable, default: now())
 // Table: site_content
 //   id: uuid (not null, default: gen_random_uuid())
 //   section_key: text (not null)
@@ -336,17 +647,37 @@ export const Constants = {
 //   updated_at: timestamp with time zone (nullable, default: now())
 
 // --- CONSTRAINTS ---
+// Table: clients
+//   PRIMARY KEY clients_pkey: PRIMARY KEY (id)
 // Table: clinic_settings
 //   PRIMARY KEY clinic_settings_pkey: PRIMARY KEY (id)
+// Table: company_settings
+//   PRIMARY KEY company_settings_pkey: PRIMARY KEY (id)
 // Table: navigation_items
 //   FOREIGN KEY navigation_items_parent_id_fkey: FOREIGN KEY (parent_id) REFERENCES navigation_items(id) ON DELETE CASCADE
 //   PRIMARY KEY navigation_items_pkey: PRIMARY KEY (id)
 //   CHECK navigation_items_type_check: CHECK ((type = ANY (ARRAY['part'::text, 'theme'::text, 'subtheme'::text])))
+// Table: order_items
+//   FOREIGN KEY order_items_order_id_fkey: FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+//   PRIMARY KEY order_items_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY order_items_product_id_fkey: FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+// Table: orders
+//   FOREIGN KEY orders_client_id_fkey: FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT
+//   PRIMARY KEY orders_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY orders_seller_id_fkey: FOREIGN KEY (seller_id) REFERENCES sellers(id) ON DELETE SET NULL
+// Table: products
+//   PRIMARY KEY products_pkey: PRIMARY KEY (id)
+// Table: sellers
+//   PRIMARY KEY sellers_pkey: PRIMARY KEY (id)
 // Table: site_content
 //   PRIMARY KEY site_content_pkey: PRIMARY KEY (id)
 //   UNIQUE site_content_section_key_key: UNIQUE (section_key)
 
 // --- ROW LEVEL SECURITY POLICIES ---
+// Table: clients
+//   Policy "authenticated_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 // Table: clinic_settings
 //   Policy "Authenticated insert for clinic_settings" (INSERT, PERMISSIVE) roles={public}
 //     WITH CHECK: (auth.role() = 'authenticated'::text)
@@ -354,12 +685,32 @@ export const Constants = {
 //     USING: (auth.role() = 'authenticated'::text)
 //   Policy "Public read access for clinic_settings" (SELECT, PERMISSIVE) roles={public}
 //     USING: true
+// Table: company_settings
+//   Policy "authenticated_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 // Table: navigation_items
 //   Policy "Authenticated full access for navigation_items" (ALL, PERMISSIVE) roles={public}
 //     USING: (auth.role() = 'authenticated'::text)
 //     WITH CHECK: (auth.role() = 'authenticated'::text)
 //   Policy "Public read access for navigation_items" (SELECT, PERMISSIVE) roles={public}
 //     USING: true
+// Table: order_items
+//   Policy "authenticated_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: orders
+//   Policy "authenticated_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: products
+//   Policy "authenticated_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: sellers
+//   Policy "authenticated_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
 // Table: site_content
 //   Policy "Authenticated upsert for site_content" (ALL, PERMISSIVE) roles={public}
 //     USING: (auth.role() = 'authenticated'::text)
@@ -370,3 +721,4 @@ export const Constants = {
 // --- INDEXES ---
 // Table: site_content
 //   CREATE UNIQUE INDEX site_content_section_key_key ON public.site_content USING btree (section_key)
+
