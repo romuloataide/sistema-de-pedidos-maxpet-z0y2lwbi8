@@ -16,22 +16,63 @@ import { Edit } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Products() {
-  const { products, setProducts } = useMainStore()
+  const { products, updateProduct, addProduct } = useMainStore()
   const { toast } = useToast()
-  const [editing, setEditing] = useState<Product | null>(null)
+  const [editing, setEditing] = useState<Partial<Product> | null>(null)
   const [open, setOpen] = useState(false)
+  const [isNew, setIsNew] = useState(false)
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editing) return
-    setProducts(products.map((p: Product) => (p.id === editing.id ? editing : p)))
+
+    if (isNew) {
+      await addProduct(editing as Omit<Product, 'id'>)
+      toast({ title: 'Produto Adicionado' })
+    } else {
+      await updateProduct(editing.id as string, editing)
+      toast({ title: 'Produto Atualizado' })
+    }
     setOpen(false)
-    toast({ title: 'Salvo', description: 'Preços atualizados com sucesso.' })
   }
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <h1 className="text-2xl font-black text-maxpet-navy">Catálogo de Produtos</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-black text-maxpet-navy">Catálogo de Produtos</h1>
+        <Dialog
+          open={open && isNew}
+          onOpenChange={(o) => {
+            setOpen(o)
+            setIsNew(o)
+            if (o)
+              setEditing({
+                name: '',
+                size: '',
+                neck: '',
+                height: '',
+                diameter: '',
+                unitPriceMilheiro: 0,
+                unitPriceCento: 0,
+                unitPriceMin: 0,
+                minQuantity: 1,
+                imageUrl: '',
+              })
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button className="bg-maxpet-green text-white">Novo Produto</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Adicionar Novo Produto</DialogTitle>
+            </DialogHeader>
+            {editing && isNew && (
+              <ProductForm editing={editing} setEditing={setEditing} handleSave={handleSave} />
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((p: Product) => (
@@ -103,50 +144,14 @@ export default function Products() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Editar Preços: {p.name}</DialogTitle>
+                    <DialogTitle>Editar Produto: {p.name}</DialogTitle>
                   </DialogHeader>
-                  {editing && (
-                    <form onSubmit={handleSave} className="space-y-4 pt-4">
-                      <div className="space-y-2">
-                        <Label>Preço Milheiro (por unidade)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={editing.unitPriceMilheiro}
-                          onChange={(e) =>
-                            setEditing({
-                              ...editing,
-                              unitPriceMilheiro: parseFloat(e.target.value),
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Preço Cento (por unidade)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={editing.unitPriceCento}
-                          onChange={(e) =>
-                            setEditing({ ...editing, unitPriceCento: parseFloat(e.target.value) })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Preço Min. ({p.minQuantity} un)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={editing.unitPriceMin}
-                          onChange={(e) =>
-                            setEditing({ ...editing, unitPriceMin: parseFloat(e.target.value) })
-                          }
-                        />
-                      </div>
-                      <Button type="submit" className="w-full bg-maxpet-green text-white">
-                        Salvar Alterações
-                      </Button>
-                    </form>
+                  {editing && !isNew && (
+                    <ProductForm
+                      editing={editing}
+                      setEditing={setEditing}
+                      handleSave={handleSave}
+                    />
                   )}
                 </DialogContent>
               </Dialog>
@@ -160,4 +165,100 @@ export default function Products() {
 
 function Badge({ children, className }: any) {
   return <span className={`rounded-full font-bold ${className}`}>{children}</span>
+}
+
+function ProductForm({ editing, setEditing, handleSave }: any) {
+  return (
+    <form onSubmit={handleSave} className="space-y-4 pt-4 h-[70vh] overflow-y-auto px-2">
+      <div className="space-y-2">
+        <Label>Nome do Produto</Label>
+        <Input
+          required
+          value={editing.name}
+          onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Tamanho (ml)</Label>
+          <Input
+            required
+            value={editing.size}
+            onChange={(e) => setEditing({ ...editing, size: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Boca</Label>
+          <Input
+            value={editing.neck}
+            onChange={(e) => setEditing({ ...editing, neck: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Altura</Label>
+          <Input
+            value={editing.height}
+            onChange={(e) => setEditing({ ...editing, height: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Diâmetro</Label>
+          <Input
+            value={editing.diameter}
+            onChange={(e) => setEditing({ ...editing, diameter: e.target.value })}
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>URL da Imagem</Label>
+        <Input
+          value={editing.imageUrl}
+          onChange={(e) => setEditing({ ...editing, imageUrl: e.target.value })}
+        />
+      </div>
+      <h3 className="font-bold text-lg pt-4 border-t">Preços e Quantidades</h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Quantidade Mínima</Label>
+          <Input
+            type="number"
+            value={editing.minQuantity}
+            onChange={(e) => setEditing({ ...editing, minQuantity: parseInt(e.target.value) })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Preço Min. (un)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={editing.unitPriceMin}
+            onChange={(e) => setEditing({ ...editing, unitPriceMin: parseFloat(e.target.value) })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Preço Cento (un)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={editing.unitPriceCento}
+            onChange={(e) => setEditing({ ...editing, unitPriceCento: parseFloat(e.target.value) })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Preço Milheiro (un)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={editing.unitPriceMilheiro}
+            onChange={(e) =>
+              setEditing({ ...editing, unitPriceMilheiro: parseFloat(e.target.value) })
+            }
+          />
+        </div>
+      </div>
+      <Button type="submit" className="w-full bg-maxpet-green text-white">
+        Salvar Produto
+      </Button>
+    </form>
+  )
 }

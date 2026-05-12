@@ -35,7 +35,9 @@ export default function CustomerForm() {
     notes: '',
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { addClient } = useMainStore()
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name || !formData.document)
       return toast({
@@ -43,8 +45,7 @@ export default function CustomerForm() {
         description: 'Nome e Documento são obrigatórios.',
         variant: 'destructive',
       })
-    const newClient = { ...formData, id: Math.random().toString(36).substr(2, 9) } as Client
-    setClients([...clients, newClient])
+    await addClient(formData as Omit<Client, 'id'>)
     toast({ title: 'Sucesso', description: 'Cliente cadastrado com sucesso.' })
     navigate('/clientes')
   }

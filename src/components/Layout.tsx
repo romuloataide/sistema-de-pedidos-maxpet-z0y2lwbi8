@@ -10,9 +10,11 @@ import {
   Home,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import useMainStore from '@/stores/main'
 
 export default function Layout() {
   const location = useLocation()
+  const { settings } = useMainStore()
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -27,9 +29,15 @@ export default function Layout() {
     <div className="flex h-screen bg-maxpet-light text-maxpet-dark overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col bg-maxpet-navy text-white print:hidden shadow-lg z-10">
-        <div className="p-6 text-3xl font-black tracking-tight flex items-center gap-1">
-          <span className="text-white">Max</span>
-          <span className="text-maxpet-green">PET</span>
+        <div className="p-6 text-3xl font-black tracking-tight flex items-center gap-1 bg-white/5">
+          {settings?.logoUrl ? (
+            <img src={settings.logoUrl} alt="Logo" className="h-10 object-contain" />
+          ) : (
+            <>
+              <span className="text-white">Max</span>
+              <span className="text-maxpet-green">PET</span>
+            </>
+          )}
         </div>
         <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
           {navItems.map((item) => {

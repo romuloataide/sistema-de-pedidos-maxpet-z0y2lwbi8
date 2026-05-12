@@ -1,5 +1,15 @@
-import React, { createContext, useContext, useState, ReactNode, createElement } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  createElement,
+} from 'react'
+import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
 
+export type Seller = { id: string; name: string }
 export type Client = {
   id: string
   name: string
@@ -11,10 +21,10 @@ export type Client = {
   city: string
   state: string
   phone: string
+  whatsapp: string
   email: string
   notes: string
 }
-
 export type Product = {
   id: string
   name: string
@@ -28,7 +38,6 @@ export type Product = {
   minQuantity: number
   imageUrl: string
 }
-
 export type OrderStatus =
   | 'Pedido registrado'
   | 'Em processamento'
@@ -36,16 +45,12 @@ export type OrderStatus =
   | 'Separado para entrega'
   | 'Entregue'
   | 'Cancelado'
-
-export type OrderItem = {
-  productId: string
-  quantity: number
-  unitPrice: number
-}
-
+export type OrderItem = { productId: string; quantity: number; unitPrice: number }
 export type Order = {
   id: string
+  shortId: string
   clientId: string
+  sellerId?: string
   items: OrderItem[]
   status: OrderStatus
   deliveryDate: string
@@ -55,186 +60,226 @@ export type Order = {
   total: number
   createdAt: string
 }
-
 export type Settings = {
+  id: string
   companyName: string
   document: string
   address: string
   phone: string
   email: string
-  sellerName: string
-}
-
-const mockClients: Client[] = [
-  {
-    id: '1',
-    name: 'Supermercado Dois Irmãos',
-    responsible: 'João Silva',
-    document: '12345678000199',
-    segment: 'Mercadinho',
-    address: 'Rua das Flores, 123',
-    neighborhood: 'Centro',
-    city: 'São Luís',
-    state: 'MA',
-    phone: '98988887777',
-    email: 'contato@doisirmaos.com',
-    notes: 'Entrega preferencial pela manhã',
-  },
-  {
-    id: '2',
-    name: 'Distribuidora Gelada',
-    responsible: 'Maria Fernandes',
-    document: '98765432000111',
-    segment: 'Distribuidora',
-    address: 'Av. dos Holandeses, 45',
-    neighborhood: 'Calhau',
-    city: 'São Luís',
-    state: 'MA',
-    phone: '98999991111',
-    email: 'compras@gelada.com',
-    notes: '',
-  },
-  {
-    id: '3',
-    name: 'Restaurante Sabor de Casa',
-    responsible: 'Carlos Mendes',
-    document: '45612378000155',
-    segment: 'Restaurante',
-    address: 'Rua do Sol, 88',
-    neighborhood: 'Praia Grande',
-    city: 'São Luís',
-    state: 'MA',
-    phone: '98977772222',
-    email: 'sabor@casa.com',
-    notes: '',
-  },
-]
-
-const mockProducts: Product[] = [
-  {
-    id: 'p1',
-    name: 'Frasco PET Redondo',
-    size: '200ml',
-    neck: '28 mm',
-    height: '136 mm',
-    diameter: '56 mm',
-    unitPriceMilheiro: 0.5,
-    unitPriceCento: 0.6,
-    unitPriceMin: 0.7,
-    minQuantity: 25,
-    imageUrl: 'https://img.usecurling.com/p/200/200?q=plastic%20bottle&color=white',
-  },
-  {
-    id: 'p2',
-    name: 'Frasco PET Cilíndrico',
-    size: '300ml',
-    neck: '38 mm',
-    height: '150 mm',
-    diameter: '50 mm',
-    unitPriceMilheiro: 0.75,
-    unitPriceCento: 0.85,
-    unitPriceMin: 0.95,
-    minQuantity: 25,
-    imageUrl: 'https://img.usecurling.com/p/200/200?q=water%20bottle&color=blue',
-  },
-  {
-    id: 'p3',
-    name: 'Frasco PET Cilíndrico Grande',
-    size: '1000ml',
-    neck: '28 mm',
-    height: '240 mm',
-    diameter: '69 mm',
-    unitPriceMilheiro: 1.25,
-    unitPriceCento: 1.4,
-    unitPriceMin: 1.5,
-    minQuantity: 15,
-    imageUrl: 'https://img.usecurling.com/p/200/200?q=large%20bottle&color=white',
-  },
-]
-
-const mockOrders: Order[] = [
-  {
-    id: '1001',
-    clientId: '1',
-    items: [{ productId: 'p1', quantity: 1000, unitPrice: 0.5 }],
-    status: 'Entregue',
-    deliveryDate: '2026-05-10',
-    paymentMethod: 'Pix',
-    notes: '',
-    internalNotes: '',
-    total: 500,
-    createdAt: '2026-05-08T10:00:00Z',
-  },
-  {
-    id: '1002',
-    clientId: '2',
-    items: [{ productId: 'p3', quantity: 500, unitPrice: 1.4 }],
-    status: 'Em produção',
-    deliveryDate: '2026-05-15',
-    paymentMethod: 'Boleto 30d',
-    notes: '',
-    internalNotes: '',
-    total: 700,
-    createdAt: '2026-05-12T14:30:00Z',
-  },
-  {
-    id: '1003',
-    clientId: '3',
-    items: [{ productId: 'p2', quantity: 100, unitPrice: 0.85 }],
-    status: 'Pedido registrado',
-    deliveryDate: '2026-05-14',
-    paymentMethod: 'Cartão',
-    notes: '',
-    internalNotes: '',
-    total: 85,
-    createdAt: '2026-05-13T09:15:00Z',
-  },
-  {
-    id: '1004',
-    clientId: '1',
-    items: [
-      { productId: 'p1', quantity: 2000, unitPrice: 0.5 },
-      { productId: 'p2', quantity: 1000, unitPrice: 0.75 },
-    ],
-    status: 'Separado para entrega',
-    deliveryDate: '2026-05-13',
-    paymentMethod: 'Pix',
-    notes: '',
-    internalNotes: '',
-    total: 1750,
-    createdAt: '2026-05-11T11:00:00Z',
-  },
-]
-
-const defaultSettings: Settings = {
-  companyName: 'MaxPET Embalagens LTda',
-  document: '00.000.000/0001-00',
-  address: 'Rodovia BR-135, Km 5, Distrito Industrial, São Luís - MA',
-  phone: '(98) 98897-7895',
-  email: 'vendas@maxpet.com.br',
-  sellerName: 'Vendedor Externo',
+  sellerName?: string
+  logoUrl?: string
 }
 
 export const StoreContext = createContext<any>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [clients, setClients] = useState<Client[]>(mockClients)
-  const [products, setProducts] = useState<Product[]>(mockProducts)
-  const [orders, setOrders] = useState<Order[]>(mockOrders)
-  const [settings, setSettings] = useState<Settings>(defaultSettings)
+  const { user } = useAuth()
+  const [clients, setClients] = useState<Client[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [settings, setSettings] = useState<Settings | null>(null)
+  const [sellers, setSellers] = useState<Seller[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) return
+    const fetchData = async () => {
+      setLoading(true)
+
+      const [resClients, resProducts, resOrders, resSettings, resSellers] = await Promise.all([
+        supabase.from('clients').select('*'),
+        supabase.from('products').select('*'),
+        supabase
+          .from('orders')
+          .select('*, items:order_items(*)')
+          .order('created_at', { ascending: false }),
+        supabase.from('company_settings').select('*').limit(1).single(),
+        supabase.from('sellers').select('*'),
+      ])
+
+      if (resClients.data)
+        setClients(resClients.data.map((c) => ({ ...c, whatsapp: c.whatsapp || '' })))
+      if (resProducts.data)
+        setProducts(
+          resProducts.data.map((p) => ({
+            id: p.id,
+            name: p.name,
+            size: p.size,
+            neck: p.neck,
+            height: p.height,
+            diameter: p.diameter,
+            unitPriceMilheiro: p.unit_price_milheiro,
+            unitPriceCento: p.unit_price_cento,
+            unitPriceMin: p.unit_price_min,
+            minQuantity: p.min_quantity,
+            imageUrl: p.image_url,
+          })),
+        )
+      if (resOrders.data)
+        setOrders(
+          resOrders.data.map((o) => ({
+            id: o.id,
+            shortId: o.short_id,
+            clientId: o.client_id,
+            sellerId: o.seller_id,
+            status: o.status,
+            deliveryDate: o.delivery_date,
+            paymentMethod: o.payment_method,
+            notes: o.notes,
+            internalNotes: o.internal_notes,
+            total: o.total,
+            createdAt: o.created_at,
+            items: o.items.map((i: any) => ({
+              productId: i.product_id,
+              quantity: i.quantity,
+              unitPrice: i.unit_price,
+            })),
+          })),
+        )
+      if (resSettings.data)
+        setSettings({
+          id: resSettings.data.id,
+          companyName: resSettings.data.company_name,
+          document: resSettings.data.document,
+          address: resSettings.data.address,
+          phone: resSettings.data.phone,
+          email: resSettings.data.email,
+          logoUrl: resSettings.data.logo_url || '',
+        })
+      if (resSellers.data) setSellers(resSellers.data)
+
+      setLoading(false)
+    }
+    fetchData()
+  }, [user])
+
+  const addClient = async (c: Omit<Client, 'id'>) => {
+    const { data } = await supabase.from('clients').insert([c]).select().single()
+    if (data) setClients([...clients, data])
+  }
+  const removeClient = async (id: string) => {
+    await supabase.from('clients').delete().eq('id', id)
+    setClients(clients.filter((c) => c.id !== id))
+  }
+
+  const addProduct = async (p: Omit<Product, 'id'>) => {
+    const payload = {
+      name: p.name,
+      size: p.size,
+      neck: p.neck,
+      height: p.height,
+      diameter: p.diameter,
+      unit_price_milheiro: p.unitPriceMilheiro,
+      unit_price_cento: p.unitPriceCento,
+      unit_price_min: p.unitPriceMin,
+      min_quantity: p.minQuantity,
+      image_url: p.imageUrl,
+    }
+    const { data } = await supabase.from('products').insert([payload]).select().single()
+    if (data) setProducts([...products, { ...p, id: data.id }])
+  }
+
+  const updateProduct = async (id: string, p: Partial<Product>) => {
+    const payload: any = {}
+    if (p.name) payload.name = p.name
+    if (p.size) payload.size = p.size
+    if (p.neck) payload.neck = p.neck
+    if (p.height) payload.height = p.height
+    if (p.diameter) payload.diameter = p.diameter
+    if (p.unitPriceMilheiro !== undefined) payload.unit_price_milheiro = p.unitPriceMilheiro
+    if (p.unitPriceCento !== undefined) payload.unit_price_cento = p.unitPriceCento
+    if (p.unitPriceMin !== undefined) payload.unit_price_min = p.unitPriceMin
+    if (p.minQuantity !== undefined) payload.min_quantity = p.minQuantity
+    if (p.imageUrl) payload.image_url = p.imageUrl
+
+    await supabase.from('products').update(payload).eq('id', id)
+    setProducts(products.map((x) => (x.id === id ? { ...x, ...p } : x)))
+  }
+
+  const addOrder = async (o: Omit<Order, 'id' | 'shortId' | 'createdAt'>) => {
+    const shortId = Math.floor(10000 + Math.random() * 90000).toString()
+    const { data } = await supabase
+      .from('orders')
+      .insert([
+        {
+          short_id: shortId,
+          client_id: o.clientId,
+          seller_id: o.sellerId || null,
+          status: o.status,
+          delivery_date: o.deliveryDate,
+          payment_method: o.paymentMethod,
+          notes: o.notes,
+          internal_notes: o.internalNotes,
+          total: o.total,
+        },
+      ])
+      .select()
+      .single()
+
+    if (data && o.items.length > 0) {
+      await supabase.from('order_items').insert(
+        o.items.map((i) => ({
+          order_id: data.id,
+          product_id: i.productId,
+          quantity: i.quantity,
+          unit_price: i.unitPrice,
+        })),
+      )
+    }
+    const newOrder = { ...o, id: data!.id, shortId, createdAt: data!.created_at }
+    setOrders([newOrder, ...orders])
+    return newOrder
+  }
+
+  const updateOrderStatus = async (id: string, status: OrderStatus) => {
+    await supabase.from('orders').update({ status }).eq('id', id)
+    setOrders(orders.map((o) => (o.id === id ? { ...o, status } : o)))
+  }
+
+  const handleUpdateSettings = async (s: Settings) => {
+    await supabase
+      .from('company_settings')
+      .update({
+        company_name: s.companyName,
+        document: s.document,
+        address: s.address,
+        phone: s.phone,
+        email: s.email,
+        logo_url: s.logoUrl,
+      })
+      .eq('id', s.id)
+    setSettings(s)
+  }
+
+  const addSeller = async (name: string) => {
+    const { data } = await supabase.from('sellers').insert([{ name }]).select().single()
+    if (data) setSellers([...sellers, data])
+  }
+  const removeSeller = async (id: string) => {
+    await supabase.from('sellers').delete().eq('id', id)
+    setSellers(sellers.filter((s) => s.id !== id))
+  }
 
   return createElement(
     StoreContext.Provider,
     {
       value: {
         clients,
-        setClients,
         products,
-        setProducts,
         orders,
-        setOrders,
         settings,
-        setSettings,
+        sellers,
+        loading,
+        addClient,
+        removeClient,
+        addProduct,
+        updateProduct,
+        addOrder,
+        updateOrderStatus,
+        updateSettings: handleUpdateSettings,
+        addSeller,
+        removeSeller,
       },
     },
     children,

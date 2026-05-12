@@ -13,14 +13,16 @@ export default function CustomerDetails() {
   const { toast } = useToast()
   const { clients, setClients, orders } = useMainStore()
 
+  const { removeClient } = useMainStore()
+
   const client = clients.find((c: any) => c.id === id)
   const clientOrders = orders.filter((o: Order) => o.clientId === id)
 
   if (!client) return <div className="p-8 text-center">Cliente não encontrado.</div>
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
-      setClients(clients.filter((c: any) => c.id !== id))
+      await removeClient(id as string)
       toast({ title: 'Excluído', description: 'Cliente removido com sucesso.' })
       navigate('/clientes')
     }
@@ -111,7 +113,7 @@ export default function CustomerDetails() {
               <CardContent className="p-4 flex justify-between items-center">
                 <div>
                   <p className="font-bold text-maxpet-navy group-hover:text-maxpet-blue transition-colors">
-                    Pedido #{o.id}
+                    Pedido #{o.shortId || o.id.slice(0, 8)}
                   </p>
                   <p className="text-sm text-gray-500">
                     {formatDate(o.createdAt)} • {o.items.length} itens

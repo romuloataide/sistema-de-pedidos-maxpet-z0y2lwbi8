@@ -15,31 +15,50 @@ import Reports from './pages/Reports'
 import Settings from './pages/Settings'
 import NotFound from './pages/NotFound'
 import { StoreProvider } from './stores/main'
+import { AuthProvider, useAuth } from './hooks/use-auth'
+import Login from './pages/Login'
+import { Loader2 } from 'lucide-react'
+
+const ProtectedRoutes = () => {
+  const { user, loading } = useAuth()
+  if (loading)
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-maxpet-blue" />
+      </div>
+    )
+  if (!user) return <Login />
+  return (
+    <StoreProvider>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Index />} />
+          <Route path="/clientes" element={<Customers />} />
+          <Route path="/clientes/novo" element={<CustomerForm />} />
+          <Route path="/clientes/:id" element={<CustomerDetails />} />
+          <Route path="/produtos" element={<Products />} />
+          <Route path="/pedidos" element={<Orders />} />
+          <Route path="/pedidos/novo" element={<NewOrder />} />
+          <Route path="/pedidos/:id" element={<OrderDetails />} />
+          <Route path="/relatorios" element={<Reports />} />
+          <Route path="/configuracoes" element={<Settings />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </StoreProvider>
+  )
+}
 
 const App = () => (
-  <StoreProvider>
+  <AuthProvider>
     <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/clientes" element={<Customers />} />
-            <Route path="/clientes/novo" element={<CustomerForm />} />
-            <Route path="/clientes/:id" element={<CustomerDetails />} />
-            <Route path="/produtos" element={<Products />} />
-            <Route path="/pedidos" element={<Orders />} />
-            <Route path="/pedidos/novo" element={<NewOrder />} />
-            <Route path="/pedidos/:id" element={<OrderDetails />} />
-            <Route path="/relatorios" element={<Reports />} />
-            <Route path="/configuracoes" element={<Settings />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <ProtectedRoutes />
       </TooltipProvider>
     </BrowserRouter>
-  </StoreProvider>
+  </AuthProvider>
 )
 
 export default App

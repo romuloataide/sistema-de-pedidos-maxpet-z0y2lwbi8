@@ -18,15 +18,19 @@ export default function OrderDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { orders, setOrders, clients, products, settings } = useMainStore()
+  const { orders, updateOrderStatus, clients, products, settings, sellers, loading } =
+    useMainStore()
 
   const order = orders.find((o: Order) => o.id === id)
+
+  if (loading) return <div className="p-8 text-center">Carregando...</div>
   if (!order) return <div className="p-8 text-center">Pedido não encontrado.</div>
 
   const client = clients.find((c: any) => c.id === order.clientId)
+  const seller = sellers.find((s: any) => s.id === order.sellerId)
 
-  const handleStatusChange = (newStatus: string) => {
-    setOrders(orders.map((o: Order) => (o.id === id ? { ...o, status: newStatus } : o)))
+  const handleStatusChange = async (newStatus: string) => {
+    await updateOrderStatus(id as string, newStatus as any)
     toast({ title: 'Status Atualizado', description: `O pedido agora está: ${newStatus}` })
   }
 
@@ -39,7 +43,9 @@ export default function OrderDetails() {
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="-ml-2">
               <ArrowLeft />
             </Button>
-            <h1 className="text-2xl font-black text-maxpet-navy">Pedido #{order.id}</h1>
+            <h1 className="text-2xl font-black text-maxpet-navy">
+              Pedido #{order.shortId || order.id.slice(0, 8)}
+            </h1>
             <Badge className="bg-maxpet-green">{order.status}</Badge>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
@@ -164,10 +170,16 @@ export default function OrderDetails() {
       <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-10 text-black font-sans leading-relaxed">
         <div className="flex justify-between items-center mb-8 border-b-4 border-maxpet-navy pb-6">
           <div>
-            <h1 className="text-4xl font-black italic tracking-tighter">
-              Max<span className="text-maxpet-green">PET</span>
-            </h1>
-            <p className="text-sm font-bold text-gray-500 tracking-widest mt-1">EMBALAGENS</p>
+            {settings?.logoUrl ? (
+              <img src={settings.logoUrl} alt="Logo" className="h-16 object-contain" />
+            ) : (
+              <>
+                <h1 className="text-4xl font-black italic tracking-tighter">
+                  Max<span className="text-maxpet-green">PET</span>
+                </h1>
+                <p className="text-sm font-bold text-gray-500 tracking-widest mt-1">EMBALAGENS</p>
+              </>
+            )}
           </div>
           <div className="text-right text-sm">
             <p className="font-bold text-lg text-maxpet-navy">{settings.companyName}</p>
@@ -201,7 +213,9 @@ export default function OrderDetails() {
               <tbody>
                 <tr>
                   <td className="py-1 font-semibold">Nº Pedido:</td>
-                  <td className="py-1 text-right font-bold text-maxpet-navy">#{order.id}</td>
+                  <td className="py-1 text-right font-bold text-maxpet-navy">
+                    #{order.shortId || order.id.slice(0, 8)}
+                  </td>
                 </tr>
                 <tr>
                   <td className="py-1 font-semibold">Emissão:</td>
@@ -217,7 +231,7 @@ export default function OrderDetails() {
                 </tr>
                 <tr>
                   <td className="py-1 font-semibold">Vendedor:</td>
-                  <td className="py-1 text-right">{settings.sellerName}</td>
+                  <td className="py-1 text-right">{seller?.name || 'Não informado'}</td>
                 </tr>
               </tbody>
             </table>
@@ -275,7 +289,7 @@ export default function OrderDetails() {
             <p className="text-xs text-gray-500">Assinatura do Cliente</p>
           </div>
           <div className="w-64 border-t border-gray-400 pt-2">
-            <p className="font-bold text-sm">{settings.sellerName}</p>
+            <p className="font-bold text-sm">{seller?.name || settings?.companyName}</p>
             <p className="text-xs text-gray-500">MaxPET Embalagens</p>
           </div>
         </div>

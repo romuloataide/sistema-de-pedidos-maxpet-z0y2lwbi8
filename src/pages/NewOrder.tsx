@@ -18,7 +18,7 @@ import { Search, ChevronRight, ChevronLeft, Check, Plus, Minus, CheckCircle } fr
 import { useToast } from '@/hooks/use-toast'
 
 export default function NewOrder() {
-  const { clients, products, orders, setOrders } = useMainStore()
+  const { clients, products, addOrder, sellers } = useMainStore()
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -27,6 +27,7 @@ export default function NewOrder() {
   const [selectedClient, setSelectedClient] = useState<string>('')
   const [cart, setCart] = useState<OrderItem[]>([])
   const [details, setDetails] = useState({
+    sellerId: '',
     deliveryDate: '',
     paymentMethod: '',
     notes: '',
@@ -58,25 +59,31 @@ export default function NewOrder() {
 
   const subtotal = cart.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0)
 
-  const handleSubmit = () => {
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async () => {
     if (!details.deliveryDate || !details.paymentMethod)
       return toast({
         title: 'Erro',
         description: 'Preencha os dados de entrega.',
         variant: 'destructive',
       })
-    const newOrder = {
-      id: Math.floor(10000 + Math.random() * 90000).toString(),
+    setSubmitting(true)
+    const newOrderPayload = {
       clientId: selectedClient,
       items: cart,
       status: 'Pedido registrado' as const,
       total: subtotal,
-      createdAt: new Date().toISOString(),
       ...details,
     }
-    setOrders([...orders, newOrder])
-    toast({ title: 'Sucesso', description: `Pedido #${newOrder.id} salvo!` })
-    navigate(`/pedidos/${newOrder.id}`)
+    try {
+      const created = await addOrder(newOrderPayload)
+      toast({ title: 'Sucesso', description: `Pedido #${created.shortId} salvo!` })
+      navigate(`/pedidos/${created.id}`)
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' })
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -226,6 +233,24 @@ export default function NewOrder() {
             </Card>
             <div className="space-y-4 bg-white p-6 rounded-xl shadow-sm">
               <div className="space-y-2">
+                <Label>Vendedor</Label>
+                <Select
+                  value={details.sellerId}
+                  onValueChange={(v) => setDetails({ ...details, sellerId: v })}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Selecione o vendedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sellers.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Data de Entrega Acordada</Label>
                 <Input
                   type="date"
@@ -295,8 +320,9 @@ export default function NewOrder() {
           <Button
             className="flex-1 h-12 text-base bg-maxpet-green hover:bg-green-600"
             onClick={handleSubmit}
+            disabled={submitting}
           >
-            <Check className="mr-2" /> Finalizar Pedido
+            <Check className="mr-2" /> {submitting ? 'Salvando...' : 'Finalizar Pedido'}
           </Button>
         )}
       </div>

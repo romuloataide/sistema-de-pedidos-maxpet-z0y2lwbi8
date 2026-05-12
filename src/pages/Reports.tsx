@@ -1,14 +1,33 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import useMainStore, { Order, Product } from '@/stores/main'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { formatCurrency } from '@/lib/utils'
-import { Printer, Download } from 'lucide-react'
+import { Printer } from 'lucide-react'
 
 export default function Reports() {
-  const { orders, products, clients } = useMainStore()
+  const { orders, products, clients, sellers } = useMainStore()
 
-  const validOrders = orders.filter((o: Order) => o.status !== 'Cancelado')
+  const [filterSeller, setFilterSeller] = useState('all')
+  const [filterSegment, setFilterSegment] = useState('all')
+
+  const validOrders = useMemo(() => {
+    return orders
+      .filter((o: Order) => o.status !== 'Cancelado')
+      .filter((o: Order) => {
+        const c = clients.find((x: any) => x.id === o.clientId)
+        const passSeller = filterSeller === 'all' || o.sellerId === filterSeller
+        const passSegment = filterSegment === 'all' || (c && c.segment === filterSegment)
+        return passSeller && passSegment
+      })
+  }, [orders, clients, filterSeller, filterSegment])
 
   const productStats = useMemo(() => {
     const stats: Record<string, { qty: number; rev: number }> = {}
@@ -29,8 +48,39 @@ export default function Reports() {
       <div className="flex justify-between items-center print:hidden">
         <h1 className="text-2xl font-black text-maxpet-navy">Relatórios Gerenciais</h1>
         <Button className="bg-maxpet-blue text-white" onClick={() => window.print()}>
-          <Printer className="mr-2 h-4 w-4" /> Imprimir Relatório
+          <Printer className="mr-2 h-4 w-4" /> Imprimir
         </Button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
+        <Select value={filterSeller} onValueChange={setFilterSeller}>
+          <SelectTrigger>
+            <SelectValue placeholder="Vendedor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Vendedores</SelectItem>
+            {sellers.map((s: any) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterSegment} onValueChange={setFilterSegment}>
+          <SelectTrigger>
+            <SelectValue placeholder="Segmento" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Segmentos</SelectItem>
+            {Array.from(new Set(clients.map((c: any) => c.segment).filter(Boolean))).map(
+              (seg: any) => (
+                <SelectItem key={seg} value={seg}>
+                  {seg as string}
+                </SelectItem>
+              ),
+            )}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="print:block print:p-8">
