@@ -66,7 +66,14 @@ export default function Layout() {
 
       <div className="flex-1 flex flex-col min-w-0 bg-maxpet-light relative">
         <header className="h-16 flex items-center justify-between px-4 md:px-8 bg-white border-b print:hidden shadow-sm z-10">
-          <h1 className="text-lg md:text-xl font-bold text-maxpet-navy">Sistema de Vendas</h1>
+          <div className="flex items-center gap-2">
+            {settings?.logoUrl && (
+              <img src={settings.logoUrl} alt="Logo" className="h-8 md:hidden object-contain" />
+            )}
+            <h1 className="text-lg md:text-xl font-bold text-maxpet-navy hidden sm:block">
+              {settings?.companyName || 'Sistema de Vendas'}
+            </h1>
+          </div>
           <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-full border">
             <div
               className={`w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-sm ${isAdmin ? 'bg-maxpet-navy' : 'bg-maxpet-green'}`}

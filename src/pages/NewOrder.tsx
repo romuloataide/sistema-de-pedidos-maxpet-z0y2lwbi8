@@ -14,11 +14,28 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { formatCurrency, formatDocument } from '@/lib/utils'
-import { Search, ChevronRight, ChevronLeft, Check, Plus, Minus, CheckCircle } from 'lucide-react'
+import {
+  Search,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Plus,
+  Minus,
+  CheckCircle,
+  PlusCircle,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { supabase } from '@/lib/supabase/client'
 
 export default function NewOrder() {
-  const { clients, products, addOrder, sellers } = useMainStore()
+  const { clients, setClients, products, addOrder, sellers } = useMainStore()
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -34,6 +51,49 @@ export default function NewOrder() {
     internalNotes: '',
   })
 
+  const [isNewClientOpen, setIsNewClientOpen] = useState(false)
+  const [newClientData, setNewClientData] = useState<Partial<Client>>({
+    name: '',
+    document: '',
+    segment: '',
+    phone: '',
+    city: 'São Luís',
+    state: 'MA',
+  })
+
+  const handleCreateClient = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newClientData.name || !newClientData.document) {
+      return toast({
+        title: 'Erro',
+        description: 'Nome e Documento são obrigatórios',
+        variant: 'destructive',
+      })
+    }
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .insert([newClientData])
+        .select()
+        .single()
+      if (error) throw error
+      if (setClients) setClients([...clients, data as Client])
+      setSelectedClient(data.id)
+      setIsNewClientOpen(false)
+      toast({ title: 'Sucesso', description: 'Cliente cadastrado com sucesso!' })
+      setNewClientData({
+        name: '',
+        document: '',
+        segment: '',
+        phone: '',
+        city: 'São Luís',
+        state: 'MA',
+      })
+    } catch (err: any) {
+      toast({ title: 'Erro ao cadastrar', description: err.message, variant: 'destructive' })
+    }
+  }
+
   const filteredClients = clients.filter(
     (c: Client) =>
       c.name.toLowerCase().includes(searchClient.toLowerCase()) ||
@@ -42,18 +102,26 @@ export default function NewOrder() {
 
   const updateCart = (productId: string, quantity: number, forcePrice?: number) => {
     const p = products.find((x: Product) => x.id === productId)!
+
+    let finalQty = quantity
+    if (quantity > 0 && quantity < p.minQuantity) {
+      finalQty = p.minQuantity
+    }
+
     let suggestedPrice = forcePrice ?? p.unitPriceMin
-    if (!forcePrice && quantity >= 1000) suggestedPrice = p.unitPriceMilheiro
-    else if (!forcePrice && quantity >= 100) suggestedPrice = p.unitPriceCento
+    if (!forcePrice && finalQty >= 1000) suggestedPrice = p.unitPriceMilheiro
+    else if (!forcePrice && finalQty >= 100) suggestedPrice = p.unitPriceCento
 
     setCart((prev) => {
       const existing = prev.find((i) => i.productId === productId)
-      if (quantity <= 0) return prev.filter((i) => i.productId !== productId)
+      if (finalQty <= 0) return prev.filter((i) => i.productId !== productId)
       if (existing)
         return prev.map((i) =>
-          i.productId === productId ? { ...i, quantity, unitPrice: forcePrice ?? i.unitPrice } : i,
+          i.productId === productId
+            ? { ...i, quantity: finalQty, unitPrice: forcePrice ?? i.unitPrice }
+            : i,
         )
-      return [...prev, { productId, quantity, unitPrice: suggestedPrice }]
+      return [...prev, { productId, quantity: finalQty, unitPrice: suggestedPrice }]
     })
   }
 
@@ -106,7 +174,76 @@ export default function NewOrder() {
         >
           {/* Step 1: Cliente */}
           <div className="w-1/3 h-full overflow-y-auto px-1 pb-20">
-            <h2 className="text-xl font-bold mb-4">1. Selecione o Cliente</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">1. Selecione o Cliente</h2>
+              <Dialog open={isNewClientOpen} onOpenChange={setIsNewClientOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-maxpet-blue text-white h-8">
+                    <PlusCircle className="w-4 h-4 mr-1" /> Novo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Cadastro Rápido de Cliente</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateClient} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>Razão Social / Nome</Label>
+                      <Input
+                        required
+                        value={newClientData.name}
+                        onChange={(e) =>
+                          setNewClientData({ ...newClientData, name: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CNPJ / CPF</Label>
+                      <Input
+                        required
+                        value={newClientData.document}
+                        onChange={(e) =>
+                          setNewClientData({ ...newClientData, document: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Telefone / WhatsApp</Label>
+                      <Input
+                        value={newClientData.phone}
+                        onChange={(e) =>
+                          setNewClientData({ ...newClientData, phone: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Segmento</Label>
+                      <Select
+                        value={newClientData.segment}
+                        onValueChange={(v) => setNewClientData({ ...newClientData, segment: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Mercadinho">Mercadinho</SelectItem>
+                          <SelectItem value="Depósito de bebidas">Depósito de bebidas</SelectItem>
+                          <SelectItem value="Restaurante">Restaurante</SelectItem>
+                          <SelectItem value="Distribuidora">Distribuidora</SelectItem>
+                          <SelectItem value="Outros">Outros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-maxpet-green hover:bg-green-600 text-white"
+                    >
+                      Salvar e Selecionar
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="relative mb-4">
               <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <Input
@@ -160,9 +297,12 @@ export default function NewOrder() {
                         <h3 className="font-bold text-maxpet-navy">
                           {p.name} {p.size}
                         </h3>
-                        <p className="text-xs text-gray-500 mb-3">
+                        <p className="text-xs text-gray-500 mb-1">
                           Ref: {formatCurrency(p.unitPriceMin)} a{' '}
                           {formatCurrency(p.unitPriceMilheiro)}/un
+                        </p>
+                        <p className="text-xs text-maxpet-blue font-semibold mb-3">
+                          Qtd. Mínima: {p.minQuantity} un
                         </p>
                         <div className="flex items-center gap-4">
                           <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
@@ -170,9 +310,11 @@ export default function NewOrder() {
                               variant="ghost"
                               size="icon"
                               className="h-10 w-10 rounded-none text-maxpet-navy"
-                              onClick={() =>
-                                updateCart(p.id, Math.max(0, qty - (qty > 100 ? 100 : 25)))
-                              }
+                              onClick={() => {
+                                const step = qty > 100 ? 100 : 25
+                                const newQty = Math.max(0, qty - step)
+                                updateCart(p.id, newQty < p.minQuantity && newQty > 0 ? 0 : newQty)
+                              }}
                             >
                               <Minus size={16} />
                             </Button>
@@ -181,13 +323,20 @@ export default function NewOrder() {
                               className="h-10 w-20 border-0 text-center font-bold bg-transparent focus-visible:ring-0"
                               value={qty || ''}
                               placeholder="0"
-                              onChange={(e) => updateCart(p.id, parseInt(e.target.value) || 0)}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0
+                                updateCart(p.id, val)
+                              }}
                             />
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-10 w-10 rounded-none text-maxpet-navy"
-                              onClick={() => updateCart(p.id, qty + (qty >= 100 ? 100 : 25))}
+                              onClick={() => {
+                                const step = qty >= 100 ? 100 : 25
+                                const newQty = qty === 0 ? p.minQuantity : qty + step
+                                updateCart(p.id, newQty)
+                              }}
                             >
                               <Plus size={16} />
                             </Button>

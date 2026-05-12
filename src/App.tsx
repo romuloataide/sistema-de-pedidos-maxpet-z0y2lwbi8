@@ -36,6 +36,7 @@ const ProtectedRoutes = () => {
           <Route path="/clientes" element={<Customers />} />
           <Route path="/clientes/novo" element={<CustomerForm />} />
           <Route path="/clientes/:id" element={<CustomerDetails />} />
+          <Route path="/clientes/:id/editar" element={<CustomerForm />} />
           <Route path="/produtos" element={<Products />} />
           <Route path="/pedidos" element={<Orders />} />
           <Route path="/pedidos/novo" element={<NewOrder />} />

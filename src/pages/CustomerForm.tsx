@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import useMainStore, { Client } from '@/stores/main'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +17,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 
 export default function CustomerForm() {
+  const { id } = useParams()
   const { clients, setClients } = useMainStore()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -37,6 +39,15 @@ export default function CustomerForm() {
 
   const { addClient } = useMainStore()
 
+  useEffect(() => {
+    if (id) {
+      const client = clients.find((c: Client) => c.id === id)
+      if (client) {
+        setFormData(client)
+      }
+    }
+  }, [id, clients])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name || !formData.document)
@@ -45,15 +56,31 @@ export default function CustomerForm() {
         description: 'Nome e Documento são obrigatórios.',
         variant: 'destructive',
       })
-    await addClient(formData as Omit<Client, 'id'>)
-    toast({ title: 'Sucesso', description: 'Cliente cadastrado com sucesso.' })
-    navigate('/clientes')
+
+    try {
+      if (id) {
+        const { error } = await supabase.from('clients').update(formData).eq('id', id)
+        if (error) throw error
+        if (setClients) {
+          setClients(clients.map((c: Client) => (c.id === id ? { ...c, ...formData } : c)))
+        }
+        toast({ title: 'Sucesso', description: 'Cliente atualizado com sucesso.' })
+      } else {
+        await addClient(formData as Omit<Client, 'id'>)
+        toast({ title: 'Sucesso', description: 'Cliente cadastrado com sucesso.' })
+      }
+      navigate('/clientes')
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' })
+    }
   }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black text-maxpet-navy">Novo Cliente</h1>
+        <h1 className="text-2xl font-black text-maxpet-navy">
+          {id ? 'Editar Cliente' : 'Novo Cliente'}
+        </h1>
         <Button variant="ghost" onClick={() => navigate(-1)}>
           Cancelar
         </Button>
@@ -176,7 +203,7 @@ export default function CustomerForm() {
               type="submit"
               className="w-full bg-maxpet-green hover:bg-green-600 text-white h-12 text-lg mt-6"
             >
-              Salvar Cliente
+              {id ? 'Salvar Alterações' : 'Salvar Cliente'}
             </Button>
           </form>
         </CardContent>
