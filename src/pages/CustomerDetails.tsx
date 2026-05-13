@@ -35,9 +35,11 @@ export default function CustomerDetails() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
         </Button>
         <div className="flex gap-2">
-          <Button variant="outline" className="text-maxpet-blue">
-            <Edit className="h-4 w-4 mr-2" /> Editar
-          </Button>
+          <Link to={`/clientes/${id}/editar`}>
+            <Button variant="outline" className="text-maxpet-blue">
+              <Edit className="h-4 w-4 mr-2" /> Editar
+            </Button>
+          </Link>
           <Button variant="destructive" onClick={handleDelete}>
             <Trash2 className="h-4 w-4 mr-2" /> Excluir
           </Button>

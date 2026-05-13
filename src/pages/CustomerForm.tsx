@@ -115,21 +115,18 @@ export default function CustomerForm() {
               </div>
               <div className="space-y-2">
                 <Label>Segmento</Label>
-                <Select
-                  value={formData.segment}
-                  onValueChange={(v) => setFormData({ ...formData, segment: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mercadinho">Mercadinho</SelectItem>
-                    <SelectItem value="Depósito de bebidas">Depósito de bebidas</SelectItem>
-                    <SelectItem value="Restaurante">Restaurante</SelectItem>
-                    <SelectItem value="Distribuidora">Distribuidora</SelectItem>
-                    <SelectItem value="Outros">Outros</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  placeholder="Ex: Mercadinho, Distribuidora..."
+                  value={formData.segment || ''}
+                  onChange={(e) => setFormData({ ...formData, segment: e.target.value })}
+                  list="segment-options"
+                />
+                <datalist id="segment-options">
+                  <option value="Mercadinho" />
+                  <option value="Depósito de bebidas" />
+                  <option value="Restaurante" />
+                  <option value="Distribuidora" />
+                </datalist>
               </div>
               <div className="space-y-2">
                 <Label>Categoria</Label>

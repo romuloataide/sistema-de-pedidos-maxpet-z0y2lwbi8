@@ -108,10 +108,18 @@ export default function OrderDetails() {
   const updateEditCart = (productId: string, quantity: number, unitPrice: number) => {
     setEditingCart((prev) => {
       const existing = prev.find((i) => i.productId === productId)
+      const p = products.find((x: any) => x.id === productId)
       if (quantity <= 0) return prev.filter((i) => i.productId !== productId)
       if (existing)
-        return prev.map((i) => (i.productId === productId ? { ...i, quantity, unitPrice } : i))
-      return [...prev, { productId, quantity, unitPrice }]
+        return prev.map((i) =>
+          i.productId === productId
+            ? { ...i, quantity, unitPrice, unit_cost: (p as any)?.unit_cost || 0 }
+            : i,
+        )
+      return [
+        ...prev,
+        { productId, quantity, unitPrice, unit_cost: (p as any)?.unit_cost || 0 } as any,
+      ]
     })
   }
 
@@ -336,6 +344,23 @@ export default function OrderDetails() {
                         {formatCurrency(order.total)}
                       </td>
                     </tr>
+                    {isAdmin && (
+                      <tr className="bg-gray-800 border-t border-gray-700">
+                        <td colSpan={3} className="p-4 text-right text-sm text-gray-300">
+                          Lucro Estimado do Pedido
+                        </td>
+                        <td className="p-4 text-right font-bold text-maxpet-green">
+                          {formatCurrency(
+                            order.total -
+                              order.items.reduce((acc: number, item: any) => {
+                                const p = products.find((x: any) => x.id === item.productId)
+                                const cost = item.unit_cost || (p ? p.unit_cost : 0) || 0
+                                return acc + cost * item.quantity
+                              }, 0),
+                          )}
+                        </td>
+                      </tr>
+                    )}
                   </tfoot>
                 </table>
               </div>
@@ -421,10 +446,10 @@ export default function OrderDetails() {
       <style
         dangerouslySetInnerHTML={{
           __html:
-            '@media print { @page { size: auto; margin: 10mm; } body { -webkit-print-color-adjust: exact; } }',
+            '@media print { @page { size: auto; margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; padding: 0; } }',
         }}
       />
-      <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-10 text-black font-sans leading-relaxed">
+      <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-12 text-black font-sans leading-relaxed">
         <div className="flex justify-between items-center mb-8 border-b-4 border-maxpet-navy pb-6">
           <div>
             {settings?.logoUrl ? (

@@ -318,10 +318,10 @@ export default function Customers() {
       <style
         dangerouslySetInnerHTML={{
           __html:
-            '@media print { @page { size: landscape; margin: 10mm; } body { -webkit-print-color-adjust: exact; } }',
+            '@media print { @page { size: landscape; margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; padding: 0; } }',
         }}
       />
-      <div className="hidden print:block font-sans text-black bg-white">
+      <div className="hidden print:block font-sans text-black bg-white p-8">
         <div className="text-center mb-6 border-b pb-4">
           <h1 className="text-2xl font-black">MAXPET - Relatório de Clientes</h1>
           <p className="text-sm text-gray-500">

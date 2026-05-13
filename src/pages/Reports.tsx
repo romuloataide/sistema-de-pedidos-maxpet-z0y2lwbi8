@@ -63,6 +63,15 @@ export default function Reports() {
 
   // KPIs
   const totalRevenue = validOrders.reduce((acc, o) => acc + o.total, 0)
+  const totalCMV = validOrders.reduce((acc, o) => {
+    const orderCost =
+      o.items?.reduce((sum: number, item: any) => {
+        const p = products.find((x: any) => x.id === item.productId)
+        const cost = item.unit_cost || (p ? p.unit_cost : 0) || 0
+        return sum + cost * item.quantity
+      }, 0) || 0
+    return acc + orderCost
+  }, 0)
 
   // Also filter expenses by date for accurate profit
   const filteredExpenses = useMemo(() => {
@@ -77,7 +86,7 @@ export default function Reports() {
   }, [expenses, dateRange])
 
   const totalExpenses = filteredExpenses.reduce((acc: number, e: any) => acc + e.amount, 0)
-  const netProfit = totalRevenue - totalExpenses
+  const netProfit = totalRevenue - totalCMV - totalExpenses
 
   // Ticket Médio
   const averageTicket = validOrders.length > 0 ? totalRevenue / validOrders.length : 0
@@ -278,9 +287,10 @@ export default function Reports() {
         <Card className="border-0 shadow-sm bg-gradient-to-br from-red-500 to-red-700 text-white">
           <CardContent className="p-6">
             <p className="text-red-200 font-bold mb-1 flex items-center gap-2">
-              <TrendingDown size={16} /> Despesas Totais
+              <TrendingDown size={16} /> Custos & Despesas
             </p>
-            <h2 className="text-2xl font-black">{formatCurrency(totalExpenses)}</h2>
+            <h2 className="text-2xl font-black">{formatCurrency(totalExpenses + totalCMV)}</h2>
+            <p className="text-xs text-red-200 mt-1 opacity-80">CMV: {formatCurrency(totalCMV)}</p>
           </CardContent>
         </Card>
         <Card className="border-0 shadow-sm bg-gradient-to-br from-maxpet-green to-green-600 text-white">
@@ -411,10 +421,10 @@ export default function Reports() {
       <style
         dangerouslySetInnerHTML={{
           __html:
-            '@media print { @page { size: auto; margin: 10mm; } body { -webkit-print-color-adjust: exact; } }',
+            '@media print { @page { size: auto; margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; padding: 0; } }',
         }}
       />
-      <div className="hidden print:block bg-white text-black font-sans">
+      <div className="hidden print:block bg-white text-black font-sans p-10">
         <div className="text-center border-b pb-4 mb-8">
           <h1 className="text-3xl font-black">MAXPET - Relatório Gerencial</h1>
           <p className="text-gray-500">
@@ -432,8 +442,9 @@ export default function Reports() {
             <p className="text-xl font-black">{formatCurrency(averageTicket)}</p>
           </div>
           <div className="border p-4 rounded text-center">
-            <p className="text-xs uppercase text-gray-500 font-bold">Despesas</p>
-            <p className="text-xl font-black">{formatCurrency(totalExpenses)}</p>
+            <p className="text-xs uppercase text-gray-500 font-bold">Custos & Despesas</p>
+            <p className="text-xl font-black">{formatCurrency(totalExpenses + totalCMV)}</p>
+            <p className="text-[10px] text-gray-400 mt-1">CMV: {formatCurrency(totalCMV)}</p>
           </div>
           <div className="border p-4 rounded text-center">
             <p className="text-xs uppercase text-gray-500 font-bold">Lucro Líquido</p>

@@ -31,14 +31,14 @@ export default function Layout() {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col bg-maxpet-navy text-white print:hidden shadow-lg z-10">
         <div
-          className="p-6 text-4xl font-black tracking-tight flex justify-center items-center gap-1 border-b border-white/10 transition-colors"
+          className="p-8 text-4xl font-black tracking-tight flex justify-center items-center gap-1 border-b border-white/10 transition-colors min-h-[160px]"
           style={{ backgroundColor: settings?.logoBgColor || '#EBF2F7' }}
         >
           {settings?.logoUrl ? (
             <img
               src={settings.logoUrl}
               alt="Logo"
-              className="h-28 w-full object-contain drop-shadow-md"
+              className="h-36 w-full object-contain drop-shadow-md scale-110"
             />
           ) : (
             <>

@@ -35,7 +35,8 @@ import {
 import { supabase } from '@/lib/supabase/client'
 
 export default function NewOrder() {
-  const { clients, setClients, products, addOrder, sellers } = useMainStore()
+  const { clients, setClients, products, addOrder, sellers, profile } = useMainStore()
+  const isAdmin = profile?.role === 'admin'
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -144,10 +145,23 @@ export default function NewOrder() {
       if (existing)
         return prev.map((i) =>
           i.productId === productId
-            ? { ...i, quantity: finalQty, unitPrice: forcePrice ?? i.unitPrice }
+            ? {
+                ...i,
+                quantity: finalQty,
+                unitPrice: forcePrice ?? i.unitPrice,
+                unit_cost: (p as any).unit_cost || 0,
+              }
             : i,
         )
-      return [...prev, { productId, quantity: finalQty, unitPrice: suggestedPrice }]
+      return [
+        ...prev,
+        {
+          productId,
+          quantity: finalQty,
+          unitPrice: suggestedPrice,
+          unit_cost: (p as any).unit_cost || 0,
+        } as any,
+      ]
     })
   }
 
@@ -263,21 +277,20 @@ export default function NewOrder() {
                       </div>
                       <div className="space-y-2">
                         <Label>Segmento</Label>
-                        <Select
-                          value={newClientData.segment}
-                          onValueChange={(v) => setNewClientData({ ...newClientData, segment: v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Mercadinho">Mercadinho</SelectItem>
-                            <SelectItem value="Depósito de bebidas">Depósito de bebidas</SelectItem>
-                            <SelectItem value="Restaurante">Restaurante</SelectItem>
-                            <SelectItem value="Distribuidora">Distribuidora</SelectItem>
-                            <SelectItem value="Outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          placeholder="Ex: Mercadinho, Distribuidora..."
+                          value={newClientData.segment || ''}
+                          onChange={(e) =>
+                            setNewClientData({ ...newClientData, segment: e.target.value })
+                          }
+                          list="segment-options"
+                        />
+                        <datalist id="segment-options">
+                          <option value="Mercadinho" />
+                          <option value="Depósito de bebidas" />
+                          <option value="Restaurante" />
+                          <option value="Distribuidora" />
+                        </datalist>
                       </div>
                       <div className="space-y-2">
                         <Label>Categoria</Label>
@@ -510,9 +523,26 @@ export default function NewOrder() {
           <div className="w-1/3 h-full overflow-y-auto px-1 pb-20">
             <h2 className="text-xl font-bold mb-4">3. Detalhes Finais</h2>
             <Card className="border-0 shadow-sm mb-6">
-              <CardContent className="p-4 bg-maxpet-blue text-white rounded-xl flex justify-between items-center">
-                <span className="font-bold">Total:</span>
-                <span className="text-2xl font-black">{formatCurrency(subtotal)}</span>
+              <CardContent className="p-4 bg-maxpet-blue text-white rounded-xl flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold">Total do Pedido:</span>
+                  <span className="text-2xl font-black">{formatCurrency(subtotal)}</span>
+                </div>
+                {isAdmin && (
+                  <div className="flex justify-between items-center pt-2 border-t border-white/20 text-sm">
+                    <span className="opacity-80">Lucro Estimado:</span>
+                    <span className="font-bold text-maxpet-green drop-shadow">
+                      {formatCurrency(
+                        subtotal -
+                          cart.reduce((acc, item) => {
+                            const p = products.find((x) => x.id === item.productId)
+                            const cost = (item as any).unit_cost || (p as any)?.unit_cost || 0
+                            return acc + cost * item.quantity
+                          }, 0),
+                      )}
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
             <div className="space-y-4 bg-white p-6 rounded-xl shadow-sm">

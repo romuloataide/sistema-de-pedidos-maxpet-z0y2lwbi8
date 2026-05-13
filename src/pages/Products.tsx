@@ -32,6 +32,11 @@ export default function Products() {
       toast({ title: 'Produto Adicionado' })
     } else {
       await updateProduct(editing.id as string, editing)
+      // Garantir atualização do custo no banco caso a store não mapeie automaticamente
+      await supabase
+        .from('products')
+        .update({ unit_cost: (editing as any).unit_cost || 0 })
+        .eq('id', editing.id)
       toast({ title: 'Produto Atualizado' })
     }
     setOpen(false)
@@ -74,7 +79,8 @@ export default function Products() {
                 minQuantity: 1,
                 stock: 0,
                 imageUrl: '',
-              })
+                unit_cost: 0,
+              } as any)
           }}
         >
           <DialogTrigger asChild>
@@ -148,8 +154,11 @@ export default function Products() {
                 </p>
               </div>
 
-              <div className="bg-maxpet-navy text-white p-4 rounded-xl space-y-2 text-sm font-medium mb-4">
-                <div className="flex justify-between items-center">
+              <div className="bg-maxpet-navy text-white p-4 rounded-xl space-y-2 text-sm font-medium mb-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-white/10 px-2 py-1 rounded-bl-lg text-[10px]">
+                  Custo: {formatCurrency((p as any).unit_cost || 0)}
+                </div>
+                <div className="flex justify-between items-center pt-2">
                   <span className="opacity-80">Milheiro:</span>
                   <span className="text-lg">
                     {formatCurrency(p.unitPriceMilheiro)}
@@ -299,6 +308,15 @@ function ProductForm({ editing, setEditing, handleSave, handlePhotoUpload, uploa
               type="number"
               value={editing.minQuantity}
               onChange={(e) => setEditing({ ...editing, minQuantity: parseInt(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Custo Unitário (R$)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={editing.unit_cost || 0}
+              onChange={(e) => setEditing({ ...editing, unit_cost: parseFloat(e.target.value) })}
             />
           </div>
           <div className="space-y-2">
