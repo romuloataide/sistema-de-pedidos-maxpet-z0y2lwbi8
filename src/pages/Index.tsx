@@ -7,15 +7,28 @@ import { DollarSign, ShoppingBag, Truck, CheckCircle2 } from 'lucide-react'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { AreaChart, Area, BarChart, Bar, XAxis, CartesianGrid } from 'recharts'
 import { Link } from 'react-router-dom'
+import { Progress } from '@/components/ui/progress'
 
 export default function Index() {
-  const { orders, clients } = useMainStore()
+  const { orders, clients, settings } = useMainStore()
 
   const validOrders = orders.filter((o: Order) => o.status !== 'Cancelado')
   const totalSales = validOrders.reduce((acc: number, o: Order) => acc + o.total, 0)
   const totalOrders = validOrders.length
   const inProduction = orders.filter((o: Order) => o.status === 'Em produção').length
   const readyDelivery = orders.filter((o: Order) => o.status === 'Separado para entrega').length
+
+  const currentMonth = new Date().getMonth()
+  const currentYear = new Date().getFullYear()
+  const thisMonthSales = validOrders
+    .filter((o) => {
+      const d = new Date(o.createdAt)
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear
+    })
+    .reduce((acc, o) => acc + o.total, 0)
+
+  const monthlyGoal = settings?.monthlyGoal || 10000
+  const progressPercent = Math.min((thisMonthSales / monthlyGoal) * 100, 100)
 
   const chartConfig = {
     sales: { label: 'Vendas (R$)', color: 'hsl(var(--chart-1))' },
@@ -45,6 +58,25 @@ export default function Index() {
 
   return (
     <div className="space-y-8 animate-fade-in-up">
+      <Card className="border-0 shadow-sm bg-gradient-to-r from-maxpet-blue to-[#003d82] text-white">
+        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="w-full md:w-1/3">
+            <h2 className="text-xl font-bold mb-1">Meta de Vendas (Mês)</h2>
+            <p className="text-blue-200 text-sm">Acompanhe seu progresso mensal.</p>
+          </div>
+          <div className="w-full md:w-2/3 space-y-3">
+            <div className="flex justify-between font-bold text-sm">
+              <span>{formatCurrency(thisMonthSales)}</span>
+              <span className="text-blue-200">Objetivo: {formatCurrency(monthlyGoal)}</span>
+            </div>
+            <Progress value={progressPercent} className="h-3 bg-blue-900/50" />
+            <p className="text-xs text-right text-blue-200">
+              {progressPercent.toFixed(1)}% concluído
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="shadow-sm border-0 border-l-4 border-maxpet-blue">
           <CardHeader className="py-4">

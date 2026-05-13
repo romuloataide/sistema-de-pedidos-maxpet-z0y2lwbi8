@@ -169,6 +169,33 @@ export default function Settings() {
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Cor de Fundo da Logo</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        className="w-16 h-10 p-1 cursor-pointer shrink-0"
+                        value={formData.logoBgColor || '#EBF2F7'}
+                        onChange={(e) => setFormData({ ...formData, logoBgColor: e.target.value })}
+                      />
+                      <Input
+                        value={formData.logoBgColor || '#EBF2F7'}
+                        onChange={(e) => setFormData({ ...formData, logoBgColor: e.target.value })}
+                        className="flex-1 uppercase"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Meta Mensal de Vendas (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.monthlyGoal || 0}
+                      onChange={(e) =>
+                        setFormData({ ...formData, monthlyGoal: parseFloat(e.target.value) })
+                      }
+                    />
+                  </div>
                 </div>
 
                 <Button

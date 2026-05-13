@@ -417,7 +417,13 @@ export default function OrderDetails() {
         </div>
       </div>
 
-      {/* PRINT UI (unchanged except logo size) */}
+      {/* PRINT UI */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html:
+            '@media print { @page { size: auto; margin: 10mm; } body { -webkit-print-color-adjust: exact; } }',
+        }}
+      />
       <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-10 text-black font-sans leading-relaxed">
         <div className="flex justify-between items-center mb-8 border-b-4 border-maxpet-navy pb-6">
           <div>
@@ -445,20 +451,21 @@ export default function OrderDetails() {
 
         <div className="flex justify-between items-start mb-8">
           <div className="w-2/3 pr-8">
-            <h2 className="bg-gray-100 font-bold px-3 py-1 mb-3 uppercase text-xs tracking-wider border-l-4 border-maxpet-blue">
+            <h2 className="font-bold px-2 py-1 mb-3 uppercase text-xs tracking-wider border-l-4 border-maxpet-blue">
               Dados do Cliente
             </h2>
             <p className="font-bold text-lg mb-1">{client?.name}</p>
             <p>CNPJ/CPF: {formatDocument(client?.document || '')}</p>
             <p>
-              Contato: {client?.responsible} - {client?.phone}
+              Contato: {client?.responsible ? `${client.responsible} - ` : ''}
+              {client?.phone}
             </p>
             <p>
               Endereço: {client?.address}, {client?.neighborhood}, {client?.city}-{client?.state}
             </p>
           </div>
           <div className="w-1/3">
-            <h2 className="bg-gray-100 font-bold px-3 py-1 mb-3 uppercase text-xs tracking-wider border-l-4 border-maxpet-green">
+            <h2 className="font-bold px-2 py-1 mb-3 uppercase text-xs tracking-wider border-l-4 border-maxpet-green">
               Detalhes do Pedido
             </h2>
             <table className="w-full text-sm">
@@ -488,7 +495,7 @@ export default function OrderDetails() {
           </div>
         </div>
 
-        <h2 className="bg-gray-100 font-bold px-3 py-1 mb-3 uppercase text-xs tracking-wider border-l-4 border-maxpet-navy">
+        <h2 className="font-bold px-2 py-1 mb-3 uppercase text-xs tracking-wider border-l-4 border-maxpet-navy">
           Itens
         </h2>
         <table className="w-full mb-8 border-collapse">
@@ -520,7 +527,7 @@ export default function OrderDetails() {
         </table>
 
         <div className="flex justify-end mb-12">
-          <div className="w-64 bg-gray-50 p-4 rounded-lg border-2 border-maxpet-navy text-center">
+          <div className="w-64 p-4 rounded-lg border-2 border-maxpet-navy text-center">
             <p className="text-sm font-bold uppercase mb-1 text-gray-500">Total a Pagar</p>
             <p className="text-3xl font-black text-maxpet-navy">{formatCurrency(order.total)}</p>
           </div>

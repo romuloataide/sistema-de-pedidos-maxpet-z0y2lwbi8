@@ -72,6 +72,8 @@ export type Settings = {
   email: string
   sellerName?: string
   logoUrl?: string
+  logoBgColor?: string
+  monthlyGoal?: number
 }
 
 export const StoreContext = createContext<any>(null)
@@ -155,6 +157,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           phone: resSettings.data.phone,
           email: resSettings.data.email,
           logoUrl: resSettings.data.logo_url || '',
+          logoBgColor: resSettings.data.logo_bg_color || '#EBF2F7',
+          monthlyGoal: Number(resSettings.data.monthly_goal) || 10000,
         })
       if (resSellers.data)
         setSellers(
@@ -339,6 +343,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         phone: s.phone,
         email: s.email,
         logo_url: s.logoUrl,
+        logo_bg_color: s.logoBgColor,
+        monthly_goal: s.monthlyGoal,
       })
       .eq('id', s.id)
     setSettings(s)

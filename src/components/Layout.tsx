@@ -30,12 +30,19 @@ export default function Layout() {
     <div className="flex h-screen bg-maxpet-light text-maxpet-dark overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col bg-maxpet-navy text-white print:hidden shadow-lg z-10">
-        <div className="p-6 text-3xl font-black tracking-tight flex justify-center items-center gap-1 bg-white/5 border-b border-white/10">
+        <div
+          className="p-6 text-4xl font-black tracking-tight flex justify-center items-center gap-1 border-b border-white/10 transition-colors"
+          style={{ backgroundColor: settings?.logoBgColor || '#EBF2F7' }}
+        >
           {settings?.logoUrl ? (
-            <img src={settings.logoUrl} alt="Logo" className="h-20 w-full object-contain" />
+            <img
+              src={settings.logoUrl}
+              alt="Logo"
+              className="h-28 w-full object-contain drop-shadow-md"
+            />
           ) : (
             <>
-              <span className="text-white">Max</span>
+              <span className="text-maxpet-navy">Max</span>
               <span className="text-maxpet-green">PET</span>
             </>
           )}
