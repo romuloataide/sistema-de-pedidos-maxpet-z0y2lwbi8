@@ -85,11 +85,19 @@ export default function Settings() {
       <h1 className="text-2xl font-black text-maxpet-navy">Painel de Administração</h1>
 
       <Tabs defaultValue="company">
-        <TabsList className="grid grid-cols-3 mb-6">
-          <TabsTrigger value="company">Empresa</TabsTrigger>
-          <TabsTrigger value="sellers">Vendedores</TabsTrigger>
-          <TabsTrigger value="expenses">Despesas</TabsTrigger>
-          <TabsTrigger value="dav">Configurações do DAV</TabsTrigger>
+        <TabsList className="flex flex-wrap md:grid md:grid-cols-4 mb-6 h-auto gap-2 bg-muted/50 p-1">
+          <TabsTrigger value="company" className="flex-1 min-w-[120px]">
+            Empresa
+          </TabsTrigger>
+          <TabsTrigger value="sellers" className="flex-1 min-w-[120px]">
+            Vendedores
+          </TabsTrigger>
+          <TabsTrigger value="expenses" className="flex-1 min-w-[120px]">
+            Despesas
+          </TabsTrigger>
+          <TabsTrigger value="dav" className="flex-1 min-w-[150px]">
+            Configurações do DAV
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="company">
