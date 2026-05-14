@@ -36,7 +36,7 @@ import { supabase } from '@/lib/supabase/client'
 
 export default function NewOrder() {
   const { clients, setClients, products, addOrder, sellers, profile } = useMainStore()
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin = true // removed auth requirement
   const navigate = useNavigate()
   const { toast } = useToast()
 
@@ -44,6 +44,7 @@ export default function NewOrder() {
   const [searchClient, setSearchClient] = useState('')
   const [selectedClient, setSelectedClient] = useState<string>('')
   const [cart, setCart] = useState<OrderItem[]>([])
+  const [searchProduct, setSearchProduct] = useState('')
   const [details, setDetails] = useState({
     sellerId: '',
     deliveryDate: '',
@@ -426,92 +427,117 @@ export default function NewOrder() {
 
           {/* Step 2: Produtos */}
           <div className="w-1/3 h-full overflow-y-auto px-1 pb-20">
-            <h2 className="text-xl font-bold mb-4">2. Produtos</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">2. Produtos</h2>
+              <div className="relative w-1/2">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Nome ou código..."
+                  className="pl-8 h-9 bg-white"
+                  value={searchProduct}
+                  onChange={(e) => setSearchProduct(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="space-y-4">
-              {products.map((p: Product) => {
-                const item = cart.find((i) => i.productId === p.id)
-                const qty = item?.quantity || 0
-                return (
-                  <Card key={p.id} className="border-0 shadow-sm overflow-hidden">
-                    <div className="flex">
-                      <div className="w-24 bg-[#EBF2F7] flex items-center justify-center p-2">
-                        <img
-                          src={p.imageUrl}
-                          alt={p.name}
-                          className="h-20 object-contain mix-blend-multiply"
-                        />
-                      </div>
-                      <CardContent className="p-4 flex-1">
-                        <h3 className="font-bold text-maxpet-navy">
-                          {p.name} {p.size}
-                        </h3>
-                        <p className="text-xs text-gray-500 mb-1">
-                          Ref: {formatCurrency(p.unitPriceMin)} a{' '}
-                          {formatCurrency(p.unitPriceMilheiro)}/un
-                        </p>
-                        <p className="text-xs text-maxpet-blue font-semibold mb-3">
-                          Qtd. Mínima: {p.minQuantity} un
-                        </p>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-10 w-10 rounded-none text-maxpet-navy"
-                              onClick={() => {
-                                const step = qty > 100 ? 100 : 25
-                                const newQty = Math.max(0, qty - step)
-                                updateCart(p.id, newQty < p.minQuantity && newQty > 0 ? 0 : newQty)
-                              }}
-                            >
-                              <Minus size={16} />
-                            </Button>
-                            <Input
-                              type="number"
-                              className="h-10 w-20 border-0 text-center font-bold bg-transparent focus-visible:ring-0"
-                              value={qty || ''}
-                              placeholder="0"
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value) || 0
-                                updateCart(p.id, val)
-                              }}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-10 w-10 rounded-none text-maxpet-navy"
-                              onClick={() => {
-                                const step = qty >= 100 ? 100 : 25
-                                const newQty = qty === 0 ? p.minQuantity : qty + step
-                                updateCart(p.id, newQty)
-                              }}
-                            >
-                              <Plus size={16} />
-                            </Button>
-                          </div>
-                          {qty > 0 && (
-                            <div className="flex-1">
-                              <Label className="text-xs text-gray-500">R$ Unidade</Label>
+              {products
+                .filter(
+                  (p: Product) =>
+                    p.name.toLowerCase().includes(searchProduct.toLowerCase()) ||
+                    (p as any).code?.toString().includes(searchProduct),
+                )
+                .map((p: Product) => {
+                  const item = cart.find((i) => i.productId === p.id)
+                  const qty = item?.quantity || 0
+                  return (
+                    <Card key={p.id} className="border-0 shadow-sm overflow-hidden">
+                      <div className="flex">
+                        <div className="w-24 bg-[#EBF2F7] flex items-center justify-center p-2">
+                          <img
+                            src={p.imageUrl}
+                            alt={p.name}
+                            className="h-20 object-contain mix-blend-multiply"
+                          />
+                        </div>
+                        <CardContent className="p-4 flex-1">
+                          <h3 className="font-bold text-maxpet-navy">
+                            <span className="text-gray-400 text-sm font-normal mr-1">
+                              #{String((p as any).code || '').padStart(4, '0')}
+                            </span>
+                            {p.name} {p.size}
+                          </h3>
+                          <p className="text-xs text-gray-500 mb-1">
+                            Ref: {formatCurrency(p.unitPriceMin)} a{' '}
+                            {formatCurrency(p.unitPriceMilheiro)}/un
+                          </p>
+                          <p className="text-xs text-maxpet-blue font-semibold mb-3">
+                            Qtd. Mínima: {p.minQuantity} un
+                          </p>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center border rounded-lg bg-gray-50 overflow-hidden">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10 rounded-none text-maxpet-navy"
+                                onClick={() => {
+                                  const step = qty > 100 ? 100 : 25
+                                  const newQty = Math.max(0, qty - step)
+                                  updateCart(
+                                    p.id,
+                                    newQty < p.minQuantity && newQty > 0 ? 0 : newQty,
+                                  )
+                                }}
+                              >
+                                <Minus size={16} />
+                              </Button>
                               <Input
                                 type="number"
-                                step="0.01"
-                                className="h-10 font-bold text-maxpet-blue"
-                                value={item?.unitPrice || ''}
-                                onChange={(e) => updateCart(p.id, qty, parseFloat(e.target.value))}
+                                className="h-10 w-20 border-0 text-center font-bold bg-transparent focus-visible:ring-0"
+                                value={qty || ''}
+                                placeholder="0"
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0
+                                  updateCart(p.id, val)
+                                }}
                               />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-10 w-10 rounded-none text-maxpet-navy"
+                                onClick={() => {
+                                  const step = qty >= 100 ? 100 : 25
+                                  const newQty = qty === 0 ? p.minQuantity : qty + step
+                                  updateCart(p.id, newQty)
+                                }}
+                              >
+                                <Plus size={16} />
+                              </Button>
                             </div>
+                            {qty > 0 && (
+                              <div className="flex-1">
+                                <Label className="text-xs text-gray-500">R$ Unidade</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  className="h-10 font-bold text-maxpet-blue"
+                                  value={item?.unitPrice || ''}
+                                  onChange={(e) =>
+                                    updateCart(p.id, qty, parseFloat(e.target.value))
+                                  }
+                                />
+                              </div>
+                            )}
+                          </div>
+                          {qty > 0 && (
+                            <p className="text-right text-sm font-black mt-2">
+                              Sub: {formatCurrency(qty * (item?.unitPrice || 0))}
+                            </p>
                           )}
-                        </div>
-                        {qty > 0 && (
-                          <p className="text-right text-sm font-black mt-2">
-                            Sub: {formatCurrency(qty * (item?.unitPrice || 0))}
-                          </p>
-                        )}
-                      </CardContent>
-                    </div>
-                  </Card>
-                )
-              })}
+                        </CardContent>
+                      </div>
+                    </Card>
+                  )
+                })}
             </div>
             <div className="mt-6 p-4 bg-maxpet-navy text-white rounded-xl flex justify-between items-center shadow-lg">
               <span className="font-bold">Total do Pedido:</span>

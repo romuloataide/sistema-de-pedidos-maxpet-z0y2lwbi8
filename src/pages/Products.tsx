@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Edit, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { Edit, Image as ImageIcon, Loader2, Search } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Products() {
@@ -22,6 +22,13 @@ export default function Products() {
   const [open, setOpen] = useState(false)
   const [isNew, setIsNew] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const filteredProducts = products.filter(
+    (p: Product) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p as any).code?.toString().includes(search),
+  )
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,52 +66,63 @@ export default function Products() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-black text-maxpet-navy">Catálogo de Produtos</h1>
-        <Dialog
-          open={open && isNew}
-          onOpenChange={(o) => {
-            setOpen(o)
-            setIsNew(o)
-            if (o)
-              setEditing({
-                name: '',
-                size: '',
-                neck: '',
-                height: '',
-                diameter: '',
-                unitPriceMilheiro: 0,
-                unitPriceCento: 0,
-                unitPriceMin: 0,
-                minQuantity: 1,
-                stock: 0,
-                imageUrl: '',
-                unit_cost: 0,
-              } as any)
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button className="bg-maxpet-green text-white">Novo Produto</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Adicionar Novo Produto</DialogTitle>
-            </DialogHeader>
-            {editing && isNew && (
-              <ProductForm
-                editing={editing}
-                setEditing={setEditing}
-                handleSave={handleSave}
-                handlePhotoUpload={handlePhotoUpload}
-                uploading={uploading}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar por nome ou código..."
+              className="pl-9 bg-white"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Dialog
+            open={open && isNew}
+            onOpenChange={(o) => {
+              setOpen(o)
+              setIsNew(o)
+              if (o)
+                setEditing({
+                  name: '',
+                  size: '',
+                  neck: '',
+                  height: '',
+                  diameter: '',
+                  unitPriceMilheiro: 0,
+                  unitPriceCento: 0,
+                  unitPriceMin: 0,
+                  minQuantity: 1,
+                  stock: 0,
+                  imageUrl: '',
+                  unit_cost: 0,
+                } as any)
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button className="bg-maxpet-green text-white">Novo Produto</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Adicionar Novo Produto</DialogTitle>
+              </DialogHeader>
+              {editing && isNew && (
+                <ProductForm
+                  editing={editing}
+                  setEditing={setEditing}
+                  handleSave={handleSave}
+                  handlePhotoUpload={handlePhotoUpload}
+                  uploading={uploading}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((p: Product) => (
+        {filteredProducts.map((p: Product) => (
           <Card key={p.id} className="overflow-hidden flex flex-col border-0 shadow-md">
             <div className="bg-[#EBF2F7] p-8 flex justify-center relative">
               {p.imageUrl ? (
@@ -124,7 +142,13 @@ export default function Products() {
             </div>
             <CardContent className="p-6 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-xl text-maxpet-navy leading-tight">{p.name}</h3>
+                <h3 className="font-bold text-xl text-maxpet-navy leading-tight">
+                  <span className="text-gray-400 text-sm font-normal mr-2">
+                    #{String((p as any).code || '').padStart(4, '0')}
+                  </span>
+                  <br />
+                  {p.name}
+                </h3>
                 <span
                   className={`text-xs font-bold px-2 py-1 rounded-full ${p.stock >= p.minQuantity ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
                 >
