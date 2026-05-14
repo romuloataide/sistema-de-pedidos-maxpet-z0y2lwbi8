@@ -34,6 +34,39 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { DavPrintView } from '@/components/DavPrintView'
+import { defaultDavConfig } from '@/components/DavSettings'
+
+const DAV_MODELS = {
+  personalizado: null, // Resolvido dinamicamente
+  simples: {
+    ...defaultDavConfig,
+    activeBlocks: {
+      ...defaultDavConfig.activeBlocks,
+      commercial: false,
+      totals: true,
+      observations: true,
+    },
+    columns: { code: true, description: true, quantity: true, unitPrice: true, total: true },
+  },
+  completo: defaultDavConfig,
+  fiscal: {
+    ...defaultDavConfig,
+    columns: { ...defaultDavConfig.columns, ipi: true, icms: true, ncm: true },
+  },
+  minimalista: {
+    ...defaultDavConfig,
+    activeBlocks: {
+      header: true,
+      client: true,
+      products: true,
+      totals: true,
+      commercial: false,
+      delivery: false,
+      observations: false,
+    },
+  },
+}
 
 export default function OrderDetails() {
   const { id } = useParams()
@@ -54,8 +87,45 @@ export default function OrderDetails() {
   const [isEditingItems, setIsEditingItems] = useState(false)
   const [editingCart, setEditingCart] = useState<OrderItem[]>([])
   const [history, setHistory] = useState<{ status: string; date: string }[]>([])
+  const [davConfig, setDavConfig] = useState(defaultDavConfig)
+  const [davData, setDavData] = useState<any>(null)
+  const [itemsDavData, setItemsDavData] = useState<any>({})
+  const [selectedModel, setSelectedModel] = useState('personalizado')
 
   const order = orders.find((o: Order) => o.id === id)
+
+  useEffect(() => {
+    supabase
+      .from('company_settings')
+      .select('dav_config')
+      .single()
+      .then(({ data }) => {
+        if (data?.dav_config) setDavConfig({ ...defaultDavConfig, ...(data.dav_config as any) })
+      })
+    if (order) {
+      supabase
+        .from('orders')
+        .select('dav_data')
+        .eq('id', order.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.dav_data) setDavData(data.dav_data)
+        })
+      supabase
+        .from('order_items')
+        .select('id, dav_data')
+        .eq('order_id', order.id)
+        .then(({ data }) => {
+          if (data) {
+            const m = {} as any
+            data.forEach((x) => {
+              m[x.id] = x.dav_data
+            })
+            setItemsDavData(m)
+          }
+        })
+    }
+  }, [order?.id])
 
   useEffect(() => {
     if (order) {
@@ -170,8 +240,26 @@ export default function OrderDetails() {
               <MessageCircle className="w-4 h-4 sm:mr-2" />{' '}
               <span className="hidden sm:inline">WhatsApp</span>
             </Button>
-            <Button className="bg-maxpet-navy text-white shrink-0" onClick={() => window.print()}>
-              <Printer className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">PDF</span>
+
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger className="w-36 bg-white">
+                <SelectValue placeholder="Modelo DAV" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="personalizado">Personalizado</SelectItem>
+                <SelectItem value="simples">Modelo Simples</SelectItem>
+                <SelectItem value="completo">Modelo Completo</SelectItem>
+                <SelectItem value="fiscal">Modelo Fiscal</SelectItem>
+                <SelectItem value="minimalista">Minimalista</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              className="bg-maxpet-navy text-white shrink-0 shadow-md"
+              onClick={() => window.print()}
+            >
+              <Printer className="w-4 h-4 sm:mr-2" />{' '}
+              <span className="hidden sm:inline">Imprimir DAV</span>
             </Button>
           </div>
         </div>
@@ -448,141 +536,23 @@ export default function OrderDetails() {
         </div>
       </div>
 
-      {/* PRINT UI */}
+      {/* PRINT UI (DAV Automático) */}
       <style
         dangerouslySetInnerHTML={{
           __html:
             '@media print { @page { size: auto; margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; margin: 0; padding: 0; } }',
         }}
       />
-      <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-12 text-black font-sans leading-relaxed">
-        <div className="flex justify-between items-center mb-8 border-b-4 border-maxpet-navy pb-6">
-          <div>
-            {settings?.logoUrl ? (
-              <img
-                src={settings.logoUrl}
-                alt="Logo"
-                className="h-24 max-w-[250px] object-contain"
-              />
-            ) : (
-              <h1 className="text-4xl font-black italic tracking-tighter">
-                Max<span className="text-maxpet-green">PET</span>
-              </h1>
-            )}
-          </div>
-          <div className="text-right text-sm">
-            <p className="font-bold text-lg text-maxpet-navy">{settings?.companyName}</p>
-            <p>CNPJ: {settings?.document}</p>
-            <p>{settings?.address}</p>
-            <p>
-              {settings?.phone} | {settings?.email}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex justify-between items-start mb-8">
-          <div className="w-2/3 pr-8">
-            <h2 className="font-bold px-2 py-1 mb-3 uppercase text-xs tracking-wider border-l-4 border-maxpet-blue">
-              Dados do Cliente
-            </h2>
-            <p className="font-bold text-lg mb-1">{client?.name}</p>
-            <p>CNPJ/CPF: {formatDocument(client?.document || '')}</p>
-            <p>
-              Contato: {client?.responsible ? `${client.responsible} - ` : ''}
-              {client?.phone}
-            </p>
-            <p>
-              Endereço: {client?.address}, {client?.neighborhood}, {client?.city}-{client?.state}
-            </p>
-          </div>
-          <div className="w-1/3">
-            <h2 className="font-bold px-2 py-1 mb-3 uppercase text-xs tracking-wider border-l-4 border-maxpet-green">
-              Detalhes do Pedido
-            </h2>
-            <table className="w-full text-sm">
-              <tbody>
-                <tr>
-                  <td className="py-1 font-semibold">Nº Pedido:</td>
-                  <td className="py-1 text-right font-bold text-maxpet-navy">#{order.shortId}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 font-semibold">Emissão:</td>
-                  <td className="py-1 text-right">{formatDate(order.createdAt)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 font-semibold">Previsão:</td>
-                  <td className="py-1 text-right">{formatDate(order.deliveryDate)}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 font-semibold">Pagamento:</td>
-                  <td className="py-1 text-right">{order.paymentMethod}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 font-semibold">Vendedor:</td>
-                  <td className="py-1 text-right">{seller?.name || 'Não informado'}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <h2 className="font-bold px-2 py-1 mb-3 uppercase text-xs tracking-wider border-l-4 border-maxpet-navy">
-          Itens
-        </h2>
-        <table className="w-full mb-8 border-collapse">
-          <thead>
-            <tr className="border-b-2 border-maxpet-navy">
-              <th className="py-2 text-left">Produto</th>
-              <th className="py-2 text-center">Quantidade</th>
-              <th className="py-2 text-right">V. Unitário</th>
-              <th className="py-2 text-right">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {order.items.map((item: any, i: number) => {
-              const p = products.find((x: any) => x.id === item.productId)
-              return (
-                <tr key={i}>
-                  <td className="py-3 font-semibold">
-                    <span className="text-gray-400 font-normal mr-1">
-                      #{String(p?.code || '').padStart(4, '0')}
-                    </span>
-                    {p?.name} {p?.size}
-                  </td>
-                  <td className="py-3 text-center">{item.quantity} un</td>
-                  <td className="py-3 text-right">{formatCurrency(item.unitPrice)}</td>
-                  <td className="py-3 text-right font-bold">
-                    {formatCurrency(item.quantity * item.unitPrice)}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-
-        <div className="flex justify-end mb-12">
-          <div className="w-64 p-4 rounded-lg border-2 border-maxpet-navy text-center">
-            <p className="text-sm font-bold uppercase mb-1 text-gray-500">Total a Pagar</p>
-            <p className="text-3xl font-black text-maxpet-navy">{formatCurrency(order.total)}</p>
-          </div>
-        </div>
-        {order.notes && (
-          <div className="mb-12">
-            <p className="font-bold text-sm">Observações Comerciais:</p>
-            <p className="text-sm italic">{order.notes}</p>
-          </div>
-        )}
-        <div className="mt-24 flex justify-around text-center pt-8">
-          <div className="w-64 border-t border-gray-400 pt-2">
-            <p className="font-bold text-sm">{client?.name}</p>
-            <p className="text-xs text-gray-500">Assinatura do Cliente</p>
-          </div>
-          <div className="w-64 border-t border-gray-400 pt-2">
-            <p className="font-bold text-sm">{seller?.name || settings?.companyName}</p>
-            <p className="text-xs text-gray-500">MaxPET Embalagens</p>
-          </div>
-        </div>
-      </div>
+      <DavPrintView
+        order={order}
+        client={client}
+        settings={settings}
+        seller={seller}
+        products={products}
+        davConfig={(DAV_MODELS as any)[selectedModel] || davConfig}
+        davData={davData}
+        itemsDavData={itemsDavData}
+      />
     </div>
   )
 }

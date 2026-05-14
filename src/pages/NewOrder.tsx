@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { DavAdvancedFields } from '@/components/DavAdvancedFields'
 import {
   Select,
   SelectContent,
@@ -51,6 +52,33 @@ export default function NewOrder() {
     paymentMethod: '',
     notes: '',
     internalNotes: '',
+  })
+
+  const [davData, setDavData] = useState({
+    delivery: {
+      carrier: '',
+      contact: '',
+      phone: '',
+      address: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      freightType: '',
+    },
+    commercial: {
+      paymentCondition: '',
+      billingAddress: '',
+      billingNeighborhood: '',
+      billingZipCode: '',
+      billingCity: '',
+      billingState: '',
+      customerOrderNumber: '',
+      discount: 0,
+      addition: 0,
+      observation: '',
+    },
+    totals: { freight: 0, insurance: 0, financialAddition: 0, ipi: 0, icms: 0, icmsSt: 0, fcp: 0 },
   })
 
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
@@ -196,16 +224,44 @@ export default function NewOrder() {
         variant: 'destructive',
       })
     setSubmitting(true)
+
+    const finalTotal =
+      subtotal -
+      (davData.commercial.discount || 0) +
+      (davData.commercial.addition || 0) +
+      (davData.totals.freight || 0) +
+      (davData.totals.ipi || 0) +
+      (davData.totals.icmsSt || 0)
+
     const newOrderPayload = {
       clientId: selectedClient,
       items: cart,
       status: 'Pedido registrado' as const,
-      total: subtotal,
+      total: finalTotal,
       ...details,
     }
     try {
       const created = await addOrder(newOrderPayload)
-      toast({ title: 'Sucesso', description: `Pedido #${created.shortId} salvo!` })
+
+      await supabase.from('orders').update({ dav_data: davData }).eq('id', created.id)
+
+      const { data: insertedItems } = await supabase
+        .from('order_items')
+        .select('id, product_id')
+        .eq('order_id', created.id)
+      if (insertedItems) {
+        for (const iItem of insertedItems) {
+          const cartItem = cart.find((c) => c.productId === iItem.product_id)
+          if (cartItem && (cartItem as any).davData) {
+            await supabase
+              .from('order_items')
+              .update({ dav_data: (cartItem as any).davData })
+              .eq('id', iItem.id)
+          }
+        }
+      }
+
+      toast({ title: 'Sucesso', description: `Pedido #${created.shortId} salvo com DAV!` })
       navigate(`/pedidos/${created.id}`)
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' })
@@ -635,6 +691,8 @@ export default function NewOrder() {
                 />
               </div>
             </div>
+
+            <DavAdvancedFields davData={davData} setDavData={setDavData} />
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { Save, Plus, Trash2, Upload, Loader2 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { DavSettings } from '@/components/DavSettings'
 
 export default function Settings() {
   const {
@@ -88,6 +89,7 @@ export default function Settings() {
           <TabsTrigger value="company">Empresa</TabsTrigger>
           <TabsTrigger value="sellers">Vendedores</TabsTrigger>
           <TabsTrigger value="expenses">Despesas</TabsTrigger>
+          <TabsTrigger value="dav">Configurações do DAV</TabsTrigger>
         </TabsList>
 
         <TabsContent value="company">
@@ -341,6 +343,10 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="dav">
+          <DavSettings companyId={formData.id} />
         </TabsContent>
       </Tabs>
     </div>
