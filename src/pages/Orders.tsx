@@ -51,16 +51,26 @@ export default function Orders() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
         <h1 className="text-2xl font-black text-maxpet-navy">Acompanhamento de Pedidos</h1>
-        <Link to="/pedidos/novo">
-          <Button className="bg-maxpet-green hover:bg-green-600 text-white w-full sm:w-auto">
-            <PlusCircle className="mr-2 h-4 w-4" /> Novo Pedido
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => window.print()}>
+            Imprimir Lista
           </Button>
-        </Link>
+          <Link to="/pedidos/novo" className="w-full sm:w-auto">
+            <Button className="bg-maxpet-green hover:bg-green-600 text-white w-full">
+              <PlusCircle className="mr-2 h-4 w-4" /> Novo Pedido
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="hidden print:block mb-4">
+        <h1 className="text-2xl font-black text-maxpet-navy">Relatório de Pedidos</h1>
+        <p className="text-sm text-gray-500">Impresso em {new Date().toLocaleDateString()}</p>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 print:hidden">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
           <Input
@@ -93,7 +103,7 @@ export default function Orders() {
           const client = clients.find((c: any) => c.id === o.clientId)
           return (
             <Link key={o.id} to={`/pedidos/${o.id}`} className="block relative group">
-              <Card className="hover:shadow-md transition-shadow border-0 shadow-sm">
+              <Card className="hover:shadow-md transition-shadow border-0 shadow-sm print:shadow-none print:border-b print:rounded-none">
                 <CardContent className="p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -119,12 +129,16 @@ export default function Orders() {
                       {formatCurrency(o.total)}
                     </p>
                     <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(o.status)}>{o.status}</Badge>
+                      <Badge
+                        className={`${getStatusColor(o.status)} print:text-black print:border print:bg-transparent`}
+                      >
+                        {o.status}
+                      </Badge>
                       {isAdmin && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                          className="h-6 w-6 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2 print:hidden"
                           onClick={(e) => handleDelete(e, o.id)}
                         >
                           <Trash2 size={16} />

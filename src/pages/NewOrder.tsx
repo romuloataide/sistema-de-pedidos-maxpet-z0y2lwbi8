@@ -586,34 +586,40 @@ export default function NewOrder() {
                             )}
                           </div>
                           {qty > 0 && (
-                            <div className="mt-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
-                              <p className="text-xs font-semibold text-gray-500 mb-2">
-                                Preços Rápidos:
+                            <div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                              <p className="text-xs font-bold text-maxpet-navy mb-2">
+                                Aplicar Tabela de Preço:
                               </p>
                               <div className="grid grid-cols-3 gap-2">
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className={`text-xs h-auto py-1.5 whitespace-normal leading-tight ${item?.unitPrice === p.unitPriceMin ? 'bg-maxpet-blue/10 border-maxpet-blue text-maxpet-blue' : ''}`}
+                                  className={`text-xs font-semibold h-auto py-2 whitespace-normal leading-tight transition-all ${item?.unitPrice === p.unitPriceMin ? 'bg-maxpet-blue border-maxpet-blue text-white shadow-md' : 'hover:border-maxpet-blue hover:text-maxpet-blue'}`}
                                   onClick={() => updateCart(p.id, qty, p.unitPriceMin)}
                                 >
-                                  Un: {formatCurrency(p.unitPriceMin)}
+                                  Unidade
+                                  <br />
+                                  {formatCurrency(p.unitPriceMin)}
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className={`text-xs h-auto py-1.5 whitespace-normal leading-tight ${item?.unitPrice === p.unitPriceCento ? 'bg-maxpet-blue/10 border-maxpet-blue text-maxpet-blue' : ''}`}
+                                  className={`text-xs font-semibold h-auto py-2 whitespace-normal leading-tight transition-all ${item?.unitPrice === p.unitPriceCento ? 'bg-maxpet-blue border-maxpet-blue text-white shadow-md' : 'hover:border-maxpet-blue hover:text-maxpet-blue'}`}
                                   onClick={() => updateCart(p.id, qty, p.unitPriceCento)}
                                 >
-                                  Cento: {formatCurrency(p.unitPriceCento)}
+                                  Cento
+                                  <br />
+                                  {formatCurrency(p.unitPriceCento)}
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className={`text-xs h-auto py-1.5 whitespace-normal leading-tight ${item?.unitPrice === p.unitPriceMilheiro ? 'bg-maxpet-blue/10 border-maxpet-blue text-maxpet-blue' : ''}`}
+                                  className={`text-xs font-semibold h-auto py-2 whitespace-normal leading-tight transition-all ${item?.unitPrice === p.unitPriceMilheiro ? 'bg-maxpet-blue border-maxpet-blue text-white shadow-md' : 'hover:border-maxpet-blue hover:text-maxpet-blue'}`}
                                   onClick={() => updateCart(p.id, qty, p.unitPriceMilheiro)}
                                 >
-                                  Milheiro: {formatCurrency(p.unitPriceMilheiro)}
+                                  Milheiro
+                                  <br />
+                                  {formatCurrency(p.unitPriceMilheiro)}
                                 </Button>
                               </div>
                             </div>

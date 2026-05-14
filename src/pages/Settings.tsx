@@ -220,8 +220,8 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="sellers">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6 md:p-8">
+          <Card className="border-0 shadow-sm flex flex-col min-h-[500px]">
+            <CardContent className="p-6 md:p-8 flex-1">
               <h2 className="text-xl font-bold text-maxpet-navy mb-4">Gerenciar Vendedores</h2>
               <div className="flex gap-2 mb-6">
                 <div className="flex-1">
@@ -239,7 +239,10 @@ export default function Settings() {
                     placeholder="% Comis."
                   />
                 </div>
-                <Button onClick={handleAddSeller} className="bg-maxpet-green text-white shrink-0">
+                <Button
+                  onClick={handleAddSeller}
+                  className="bg-maxpet-green hover:bg-green-600 text-white shrink-0"
+                >
                   <Plus className="w-4 h-4 mr-2" /> Adicionar
                 </Button>
               </div>
@@ -270,12 +273,25 @@ export default function Settings() {
                 )}
               </ul>
             </CardContent>
+            <div className="p-6 pt-0 mt-auto">
+              <Button
+                className="w-full bg-maxpet-navy hover:bg-[#00152b] text-white h-12"
+                onClick={() =>
+                  toast({
+                    title: 'Vendedores Salvos',
+                    description: 'A lista de vendedores está atualizada.',
+                  })
+                }
+              >
+                <Save className="mr-2 h-4 w-4" /> Salvar Vendedores
+              </Button>
+            </div>
           </Card>
         </TabsContent>
 
         <TabsContent value="expenses">
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-6 md:p-8">
+          <Card className="border-0 shadow-sm flex flex-col min-h-[500px]">
+            <CardContent className="p-6 md:p-8 flex-1">
               <h2 className="text-xl font-bold text-maxpet-navy mb-4">Registro de Despesas</h2>
               <form onSubmit={handleAddExpense} className="flex flex-col md:flex-row gap-2 mb-6">
                 <div className="flex-1">
@@ -304,7 +320,10 @@ export default function Settings() {
                     onChange={(e) => setExpDate(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="bg-maxpet-navy text-white shrink-0">
+                <Button
+                  type="submit"
+                  className="bg-maxpet-green hover:bg-green-600 text-white shrink-0"
+                >
                   <Plus className="w-4 h-4 mr-2" /> Registrar
                 </Button>
               </form>
@@ -350,6 +369,19 @@ export default function Settings() {
                 </table>
               </div>
             </CardContent>
+            <div className="p-6 pt-0 mt-auto">
+              <Button
+                className="w-full bg-maxpet-navy hover:bg-[#00152b] text-white h-12"
+                onClick={() =>
+                  toast({
+                    title: 'Despesas Salvas',
+                    description: 'A lista de despesas está atualizada.',
+                  })
+                }
+              >
+                <Save className="mr-2 h-4 w-4" /> Salvar Despesas
+              </Button>
+            </div>
           </Card>
         </TabsContent>
 

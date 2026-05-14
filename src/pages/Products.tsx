@@ -12,8 +12,9 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Edit, Image as ImageIcon, Loader2, Search, Copy } from 'lucide-react'
+import { Edit, Image as ImageIcon, Loader2, Search, Copy, Trash2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/lib/supabase/client'
 
 export default function Products() {
   const { products, updateProduct, addProduct, uploadImage } = useMainStore()
@@ -31,14 +32,32 @@ export default function Products() {
   )
 
   const handleClone = (product: Product) => {
+    const maxCode = products.reduce((max: number, p: any) => Math.max(max, p.code || 0), 0)
     setEditing({
       ...product,
       id: undefined,
-      code: undefined,
+      code: maxCode + 1,
       name: `${product.name} (Cópia)`,
     } as any)
     setIsNew(true)
     setOpen(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (
+      !window.confirm('Tem certeza que deseja excluir este produto? A ação não pode ser desfeita.')
+    )
+      return
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', id)
+      if (error) throw error
+      toast({ title: 'Produto excluído com sucesso' })
+      setTimeout(() => {
+        window.location.reload()
+      }, 500)
+    } catch (e: any) {
+      toast({ title: 'Erro ao excluir', description: e.message, variant: 'destructive' })
+    }
   }
 
   const handleSave = async (e: React.FormEvent) => {
@@ -50,10 +69,13 @@ export default function Products() {
       toast({ title: 'Produto Adicionado' })
     } else {
       await updateProduct(editing.id as string, editing)
-      // Garantir atualização do custo no banco caso a store não mapeie automaticamente
+      // Garantir atualização de campos adicionais no banco
       await supabase
         .from('products')
-        .update({ unit_cost: (editing as any).unit_cost || 0 })
+        .update({
+          unit_cost: (editing as any).unit_cost || 0,
+          code: (editing as any).code,
+        })
         .eq('id', editing.id)
       toast({ title: 'Produto Atualizado' })
     }
@@ -94,8 +116,13 @@ export default function Products() {
             onOpenChange={(o) => {
               setOpen(o)
               setIsNew(o)
-              if (o)
+              if (o) {
+                const maxCode = products.reduce(
+                  (max: number, p: any) => Math.max(max, p.code || 0),
+                  0,
+                )
                 setEditing({
+                  code: maxCode + 1,
                   name: '',
                   size: '',
                   neck: '',
@@ -109,10 +136,13 @@ export default function Products() {
                   imageUrl: '',
                   unit_cost: 0,
                 } as any)
+              }
             }}
           >
             <DialogTrigger asChild>
-              <Button className="bg-maxpet-green text-white">Novo Produto</Button>
+              <Button className="bg-maxpet-green hover:bg-green-600 text-white">
+                Novo Produto
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
@@ -134,8 +164,20 @@ export default function Products() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts.map((p: Product) => (
-          <Card key={p.id} className="overflow-hidden flex flex-col border-0 shadow-md">
+          <Card
+            key={p.id}
+            className="overflow-hidden flex flex-col border-0 shadow-md relative group"
+          >
             <div className="bg-[#EBF2F7] p-8 flex justify-center relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 left-2 bg-white/50 text-red-500 hover:bg-red-50 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleDelete(p.id)}
+                title="Excluir Produto"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
               {p.imageUrl ? (
                 <img
                   src={p.imageUrl}
@@ -274,13 +316,24 @@ function ProductForm({ editing, setEditing, handleSave, handlePhotoUpload, uploa
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-4">
           <h3 className="font-bold border-b pb-2">Informações Gerais</h3>
-          <div className="space-y-2">
-            <Label>Nome do Produto</Label>
-            <Input
-              required
-              value={editing.name}
-              onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-            />
+          <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-2 col-span-1">
+              <Label>Código SKU</Label>
+              <Input
+                type="number"
+                required
+                value={(editing as any).code || ''}
+                onChange={(e) => setEditing({ ...editing, code: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label>Nome do Produto</Label>
+              <Input
+                required
+                value={editing.name}
+                onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Estoque Atual</Label>

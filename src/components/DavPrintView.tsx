@@ -83,7 +83,7 @@ export function DavPrintView({
       {/* Cliente */}
       {activeBlocks.client && (
         <div className="border-2 border-black mb-2">
-          <div className="bg-gray-200 font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
+          <div className="font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
             Dados do Cliente
           </div>
           <div className={`p-2 grid ${isThermal ? 'grid-cols-1' : 'grid-cols-2'} gap-x-4 gap-y-1`}>
@@ -121,7 +121,7 @@ export function DavPrintView({
       {activeBlocks.delivery &&
         (dData.delivery?.carrier || dData.delivery?.address || dData.delivery?.freightType) && (
           <div className="border-2 border-black mb-2">
-            <div className="bg-gray-200 font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
+            <div className="font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
               Dados de Entrega
             </div>
             <div
@@ -151,7 +151,7 @@ export function DavPrintView({
         <div className="mb-2">
           <table className="w-full border-collapse border-2 border-black">
             <thead>
-              <tr className="bg-gray-200 border-b-2 border-black text-[9px] uppercase">
+              <tr className="border-b-2 border-black text-[9px] uppercase">
                 {columns.code && (
                   <th className="border-r border-black px-1 py-0.5 text-left">Cód</th>
                 )}
@@ -234,7 +234,7 @@ export function DavPrintView({
       <div className={`grid ${isThermal ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-2`}>
         {activeBlocks.commercial && (
           <div className="border-2 border-black">
-            <div className="bg-gray-200 font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
+            <div className="font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
               Condições Comerciais
             </div>
             <div className="p-2 space-y-1">
@@ -262,7 +262,7 @@ export function DavPrintView({
 
         {activeBlocks.observations && (
           <div className="border-2 border-black">
-            <div className="bg-gray-200 font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
+            <div className="font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
               Observações
             </div>
             <div className="p-2 space-y-1">
@@ -314,7 +314,7 @@ export function DavPrintView({
                   <td className="px-2 py-0.5">{formatCurrency(dData.totals.icmsSt)}</td>
                 </tr>
               )}
-              <tr className="border-t-2 border-black bg-gray-200 font-black text-sm">
+              <tr className="border-t-2 border-black font-black text-sm">
                 <td className="px-2 py-1 uppercase">Total a Pagar:</td>
                 <td className="px-2 py-1">{formatCurrency(order?.total || 0)}</td>
               </tr>
@@ -342,6 +342,10 @@ export function DavPrintView({
           {texts.footer}
         </div>
       )}
+
+      <div className="mt-2 text-center font-bold text-black text-[10px]">
+        ESTE DOCUMENTO NÃO É UM DOCUMENTO FISCAL
+      </div>
     </div>
   )
 }
