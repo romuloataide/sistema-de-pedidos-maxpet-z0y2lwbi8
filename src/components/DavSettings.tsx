@@ -16,31 +16,31 @@ import { useToast } from '@/hooks/use-toast'
 import useMainStore from '@/stores/main'
 import { Save } from 'lucide-react'
 
+export const defaultDavConfig = {
+  enabledBlocks: {
+    header: true,
+    client: true,
+    delivery: true,
+    products: true,
+    commercial: true,
+    totals: true,
+  },
+  texts: {
+    footer: 'Obrigado pela preferência!',
+    fiscalNotes: 'Documento auxiliar de venda - Sem valor fiscal',
+    commercialTerms: 'Validade da proposta: 15 dias.',
+  },
+  layout: {
+    orientation: 'portrait',
+    size: 'A4',
+    headerColor: '#EBF2F7',
+    logoSize: 100,
+  },
+}
+
 export function DavSettings({ companyId }: { companyId?: string }) {
   const { settings, updateSettings } = useMainStore()
   const { toast } = useToast()
-
-  const defaultDavConfig = {
-    enabledBlocks: {
-      header: true,
-      client: true,
-      delivery: true,
-      products: true,
-      commercial: true,
-      totals: true,
-    },
-    texts: {
-      footer: 'Obrigado pela preferência!',
-      fiscalNotes: 'Documento auxiliar de venda - Sem valor fiscal',
-      commercialTerms: 'Validade da proposta: 15 dias.',
-    },
-    layout: {
-      orientation: 'portrait',
-      size: 'A4',
-      headerColor: '#EBF2F7',
-      logoSize: 100,
-    },
-  }
 
   const [config, setConfig] = useState<any>(defaultDavConfig)
 
