@@ -10,13 +10,37 @@ export function DavPrintView({
   davData,
   itemsDavData,
 }: any) {
-  if (!davConfig) return null
+  const defaultConfig = {
+    activeBlocks: {
+      header: true,
+      client: true,
+      delivery: true,
+      products: true,
+      commercial: true,
+      observations: true,
+      totals: true,
+    },
+    columns: {
+      code: true,
+      description: true,
+      quantity: true,
+      unitPrice: true,
+      ipi: true,
+      icms: true,
+      ncm: true,
+      total: true,
+    },
+    texts: {},
+    layout: { size: 'a4' },
+  }
 
   const dData = davData || { delivery: {}, commercial: {}, totals: {} }
-  const activeBlocks = davConfig.activeBlocks || {}
-  const columns = davConfig.columns || {}
-  const texts = davConfig.texts || {}
-  const isThermal = davConfig.layout?.size === 'thermal'
+
+  // Use defaults if davConfig blocks are not defined (e.g. empty jsonb from database)
+  const activeBlocks = davConfig?.activeBlocks || defaultConfig.activeBlocks
+  const columns = davConfig?.columns || defaultConfig.columns
+  const texts = davConfig?.texts || defaultConfig.texts
+  const isThermal = davConfig?.layout?.size === 'thermal'
 
   return (
     <div

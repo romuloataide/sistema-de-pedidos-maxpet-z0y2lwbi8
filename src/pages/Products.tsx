@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Edit, Image as ImageIcon, Loader2, Search } from 'lucide-react'
+import { Edit, Image as ImageIcon, Loader2, Search, Copy } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Products() {
@@ -29,6 +29,17 @@ export default function Products() {
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       (p as any).code?.toString().includes(search),
   )
+
+  const handleClone = (product: Product) => {
+    setEditing({
+      ...product,
+      id: undefined,
+      code: undefined,
+      name: `${product.name} (Cópia)`,
+    } as any)
+    setIsNew(true)
+    setOpen(true)
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -205,36 +216,46 @@ export default function Products() {
                 </div>
               </div>
 
-              <Dialog
-                open={open && editing?.id === p.id}
-                onOpenChange={(o) => {
-                  setOpen(o)
-                  if (o) setEditing(p)
-                }}
-              >
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full text-maxpet-blue border-maxpet-blue hover:bg-maxpet-blue hover:text-white transition-colors"
-                  >
-                    <Edit className="w-4 h-4 mr-2" /> Editar Detalhes
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Editar Produto: {p.name}</DialogTitle>
-                  </DialogHeader>
-                  {editing && !isNew && (
-                    <ProductForm
-                      editing={editing}
-                      setEditing={setEditing}
-                      handleSave={handleSave}
-                      handlePhotoUpload={handlePhotoUpload}
-                      uploading={uploading}
-                    />
-                  )}
-                </DialogContent>
-              </Dialog>
+              <div className="flex gap-2 mt-auto">
+                <Dialog
+                  open={open && editing?.id === p.id}
+                  onOpenChange={(o) => {
+                    setOpen(o)
+                    if (o) setEditing(p)
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="flex-1 text-maxpet-blue border-maxpet-blue hover:bg-maxpet-blue hover:text-white transition-colors"
+                    >
+                      <Edit className="w-4 h-4 mr-2" /> Editar
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Editar Produto: {p.name}</DialogTitle>
+                    </DialogHeader>
+                    {editing && !isNew && (
+                      <ProductForm
+                        editing={editing}
+                        setEditing={setEditing}
+                        handleSave={handleSave}
+                        handlePhotoUpload={handlePhotoUpload}
+                        uploading={uploading}
+                      />
+                    )}
+                  </DialogContent>
+                </Dialog>
+                <Button
+                  variant="outline"
+                  className="flex-none text-maxpet-navy border-gray-300 hover:bg-gray-100 transition-colors px-3"
+                  onClick={() => handleClone(p)}
+                  title="Clonar Produto"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}

@@ -124,6 +124,7 @@ export default function NewOrder() {
       setSelectedClient(data.id)
       setIsNewClientOpen(false)
       toast({ title: 'Sucesso', description: 'Cliente cadastrado com sucesso!' })
+      setStep(2) // Move to step 2 automatically
       setNewClientData({
         name: '',
         document: '',
@@ -351,19 +352,19 @@ export default function NewOrder() {
                       </div>
                       <div className="space-y-2">
                         <Label>Categoria</Label>
-                        <Select
-                          value={newClientData.category}
-                          onValueChange={(v) => setNewClientData({ ...newClientData, category: v })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Normal">Normal</SelectItem>
-                            <SelectItem value="Revenda">Revenda</SelectItem>
-                            <SelectItem value="VIP">VIP</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          placeholder="Ex: Normal, Revenda, VIP..."
+                          value={newClientData.category || ''}
+                          onChange={(e) =>
+                            setNewClientData({ ...newClientData, category: e.target.value })
+                          }
+                          list="category-options"
+                        />
+                        <datalist id="category-options">
+                          <option value="Normal" />
+                          <option value="Revenda" />
+                          <option value="VIP" />
+                        </datalist>
                       </div>
                       <div className="space-y-2">
                         <Label>Telefone</Label>
@@ -571,7 +572,7 @@ export default function NewOrder() {
                             </div>
                             {qty > 0 && (
                               <div className="flex-1">
-                                <Label className="text-xs text-gray-500">R$ Unidade</Label>
+                                <Label className="text-xs text-gray-500">R$ Unidade (Final)</Label>
                                 <Input
                                   type="number"
                                   step="0.01"
@@ -584,6 +585,39 @@ export default function NewOrder() {
                               </div>
                             )}
                           </div>
+                          {qty > 0 && (
+                            <div className="mt-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                              <p className="text-xs font-semibold text-gray-500 mb-2">
+                                Preços Rápidos:
+                              </p>
+                              <div className="grid grid-cols-3 gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={`text-xs h-auto py-1.5 whitespace-normal leading-tight ${item?.unitPrice === p.unitPriceMin ? 'bg-maxpet-blue/10 border-maxpet-blue text-maxpet-blue' : ''}`}
+                                  onClick={() => updateCart(p.id, qty, p.unitPriceMin)}
+                                >
+                                  Un: {formatCurrency(p.unitPriceMin)}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={`text-xs h-auto py-1.5 whitespace-normal leading-tight ${item?.unitPrice === p.unitPriceCento ? 'bg-maxpet-blue/10 border-maxpet-blue text-maxpet-blue' : ''}`}
+                                  onClick={() => updateCart(p.id, qty, p.unitPriceCento)}
+                                >
+                                  Cento: {formatCurrency(p.unitPriceCento)}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={`text-xs h-auto py-1.5 whitespace-normal leading-tight ${item?.unitPrice === p.unitPriceMilheiro ? 'bg-maxpet-blue/10 border-maxpet-blue text-maxpet-blue' : ''}`}
+                                  onClick={() => updateCart(p.id, qty, p.unitPriceMilheiro)}
+                                >
+                                  Milheiro: {formatCurrency(p.unitPriceMilheiro)}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                           {qty > 0 && (
                             <p className="text-right text-sm font-black mt-2">
                               Sub: {formatCurrency(qty * (item?.unitPrice || 0))}
