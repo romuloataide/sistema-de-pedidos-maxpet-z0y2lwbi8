@@ -30,12 +30,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
+      if (session) setLoading(false)
     })
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
+      if (!session) {
+        // Auto-login para remover a necessidade de senha
+        supabase.auth
+          .signInWithPassword({ email: 'admin@maxpet.com', password: 'Maxpet123!' })
+          .then(({ error }) => {
+            if (error) {
+              console.error('Auto-login error:', error)
+              setLoading(false)
+            }
+          })
+      } else {
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+      }
     })
     return () => subscription.unsubscribe()
   }, [])

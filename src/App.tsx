@@ -16,18 +16,21 @@ import Settings from './pages/Settings'
 import NotFound from './pages/NotFound'
 import { StoreProvider } from './stores/main'
 import { AuthProvider, useAuth } from './hooks/use-auth'
-import Login from './pages/Login'
 import { Loader2 } from 'lucide-react'
 
 const ProtectedRoutes = () => {
   const { user, loading } = useAuth()
-  if (loading)
+
+  if (loading || !user)
     return (
-      <div className="h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-maxpet-blue" />
+      <div className="h-screen flex items-center justify-center bg-maxpet-light">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 animate-spin text-maxpet-blue" />
+          <p className="text-maxpet-navy font-medium">Acessando sistema...</p>
+        </div>
       </div>
     )
-  if (!user) return <Login />
+
   return (
     <StoreProvider>
       <Routes>
