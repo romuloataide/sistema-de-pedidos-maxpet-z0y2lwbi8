@@ -13,14 +13,17 @@ export function DavPrintView({
   if (!davConfig) return null
 
   const dData = davData || { delivery: {}, commercial: {}, totals: {} }
-  const isThermal = davConfig.layout.size === 'thermal'
+  const activeBlocks = davConfig.activeBlocks || {}
+  const columns = davConfig.columns || {}
+  const texts = davConfig.texts || {}
+  const isThermal = davConfig.layout?.size === 'thermal'
 
   return (
     <div
       className={`hidden print:block fixed inset-0 bg-white z-[9999] text-black font-sans leading-tight ${isThermal ? 'w-[80mm] p-2 text-[9px]' : 'p-8 text-[11px]'}`}
     >
       {/* Cabeçalho */}
-      {davConfig.activeBlocks.header && (
+      {activeBlocks.header && (
         <div
           className={`flex ${isThermal ? 'flex-col gap-2' : 'justify-between'} border-2 border-black p-2 mb-2`}
         >
@@ -47,14 +50,14 @@ export function DavPrintView({
             className={`${isThermal ? 'w-full border-t-2 mt-2 pt-2' : 'w-1/4 border-l-2 pl-2'} text-center border-black flex flex-col justify-center`}
           >
             <h2 className="font-bold text-[10px] uppercase mb-1">Documento Auxiliar de Venda</h2>
-            <p className="font-black text-lg">Nº {order.shortId}</p>
-            <p>Emissão: {formatDate(order.createdAt)}</p>
+            <p className="font-black text-lg">Nº {order?.shortId}</p>
+            <p>Emissão: {order?.createdAt ? formatDate(order.createdAt) : ''}</p>
           </div>
         </div>
       )}
 
       {/* Cliente */}
-      {davConfig.activeBlocks.client && (
+      {activeBlocks.client && (
         <div className="border-2 border-black mb-2">
           <div className="bg-gray-200 font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
             Dados do Cliente
@@ -91,7 +94,7 @@ export function DavPrintView({
       )}
 
       {/* Entrega */}
-      {davConfig.activeBlocks.delivery &&
+      {activeBlocks.delivery &&
         (dData.delivery?.carrier || dData.delivery?.address || dData.delivery?.freightType) && (
           <div className="border-2 border-black mb-2">
             <div className="bg-gray-200 font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
@@ -120,77 +123,77 @@ export function DavPrintView({
         )}
 
       {/* Itens */}
-      {davConfig.activeBlocks.products && (
+      {activeBlocks.products && (
         <div className="mb-2">
           <table className="w-full border-collapse border-2 border-black">
             <thead>
               <tr className="bg-gray-200 border-b-2 border-black text-[9px] uppercase">
-                {davConfig.columns.code && (
+                {columns.code && (
                   <th className="border-r border-black px-1 py-0.5 text-left">Cód</th>
                 )}
-                {davConfig.columns.description && (
+                {columns.description && (
                   <th className="border-r border-black px-1 py-0.5 text-left">Descrição</th>
                 )}
-                {davConfig.columns.quantity && (
+                {columns.quantity && (
                   <th className="border-r border-black px-1 py-0.5 text-right">Qtd</th>
                 )}
-                {davConfig.columns.unitPrice && (
+                {columns.unitPrice && (
                   <th className="border-r border-black px-1 py-0.5 text-right">Unit</th>
                 )}
-                {davConfig.columns.ipi && !isThermal && (
+                {columns.ipi && !isThermal && (
                   <th className="border-r border-black px-1 py-0.5 text-right">% IPI</th>
                 )}
-                {davConfig.columns.icms && !isThermal && (
+                {columns.icms && !isThermal && (
                   <th className="border-r border-black px-1 py-0.5 text-right">% ICMS</th>
                 )}
-                {davConfig.columns.ncm && !isThermal && (
+                {columns.ncm && !isThermal && (
                   <th className="border-r border-black px-1 py-0.5 text-center">NCM</th>
                 )}
-                {davConfig.columns.total && <th className="px-1 py-0.5 text-right">Total</th>}
+                {columns.total && <th className="px-1 py-0.5 text-right">Total</th>}
               </tr>
             </thead>
             <tbody>
-              {order.items.map((item: any, i: number) => {
-                const p = products.find((x: any) => x.id === item.productId)
+              {order?.items?.map((item: any, i: number) => {
+                const p = products?.find((x: any) => x.id === item.productId)
                 const iData = itemsDavData?.[item.id] || {}
                 return (
                   <tr key={i} className="border-b border-black last:border-b-0 text-[10px]">
-                    {davConfig.columns.code && (
+                    {columns.code && (
                       <td className="border-r border-black px-1 py-1">
                         {String(p?.code || '').padStart(4, '0')}
                       </td>
                     )}
-                    {davConfig.columns.description && (
+                    {columns.description && (
                       <td className="border-r border-black px-1 py-1">
                         {p?.name} {p?.size}
                       </td>
                     )}
-                    {davConfig.columns.quantity && (
+                    {columns.quantity && (
                       <td className="border-r border-black px-1 py-1 text-right">
                         {item.quantity}
                       </td>
                     )}
-                    {davConfig.columns.unitPrice && (
+                    {columns.unitPrice && (
                       <td className="border-r border-black px-1 py-1 text-right">
                         {formatCurrency(item.unitPrice)}
                       </td>
                     )}
-                    {davConfig.columns.ipi && !isThermal && (
+                    {columns.ipi && !isThermal && (
                       <td className="border-r border-black px-1 py-1 text-right">
                         {iData.ipiPercentage ? iData.ipiPercentage + '%' : '-'}
                       </td>
                     )}
-                    {davConfig.columns.icms && !isThermal && (
+                    {columns.icms && !isThermal && (
                       <td className="border-r border-black px-1 py-1 text-right">
                         {iData.icmsPercentage ? iData.icmsPercentage + '%' : '-'}
                       </td>
                     )}
-                    {davConfig.columns.ncm && !isThermal && (
+                    {columns.ncm && !isThermal && (
                       <td className="border-r border-black px-1 py-1 text-center">
                         {iData.ncm || '-'}
                       </td>
                     )}
-                    {davConfig.columns.total && (
+                    {columns.total && (
                       <td className="px-1 py-1 text-right font-bold">
                         {formatCurrency(item.quantity * item.unitPrice)}
                       </td>
@@ -205,7 +208,7 @@ export function DavPrintView({
 
       {/* Condições e Observações */}
       <div className={`grid ${isThermal ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-2`}>
-        {davConfig.activeBlocks.commercial && (
+        {activeBlocks.commercial && (
           <div className="border-2 border-black">
             <div className="bg-gray-200 font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
               Condições Comerciais
@@ -214,7 +217,7 @@ export function DavPrintView({
               <p>
                 <strong>Vendedor:</strong> {seller?.name || '-'}
               </p>
-              {order.paymentMethod && (
+              {order?.paymentMethod && (
                 <p>
                   <strong>Pagamento:</strong> {order.paymentMethod}
                 </p>
@@ -233,17 +236,15 @@ export function DavPrintView({
           </div>
         )}
 
-        {davConfig.activeBlocks.observations && (
+        {activeBlocks.observations && (
           <div className="border-2 border-black">
             <div className="bg-gray-200 font-bold px-2 py-0.5 border-b-2 border-black uppercase text-[10px]">
               Observações
             </div>
             <div className="p-2 space-y-1">
-              {order.notes && <p>{order.notes}</p>}
-              {davConfig.texts.fiscalObservation && (
-                <p className="italic text-gray-600 leading-tight">
-                  {davConfig.texts.fiscalObservation}
-                </p>
+              {order?.notes && <p>{order.notes}</p>}
+              {texts.fiscalObservation && (
+                <p className="italic text-gray-600 leading-tight">{texts.fiscalObservation}</p>
               )}
             </div>
           </div>
@@ -251,7 +252,7 @@ export function DavPrintView({
       </div>
 
       {/* Totais */}
-      {davConfig.activeBlocks.totals && (
+      {activeBlocks.totals && (
         <div
           className={`border-2 border-black flex ${isThermal ? 'justify-center' : 'justify-end'}`}
         >
@@ -291,7 +292,7 @@ export function DavPrintView({
               )}
               <tr className="border-t-2 border-black bg-gray-200 font-black text-sm">
                 <td className="px-2 py-1 uppercase">Total a Pagar:</td>
-                <td className="px-2 py-1">{formatCurrency(order.total)}</td>
+                <td className="px-2 py-1">{formatCurrency(order?.total || 0)}</td>
               </tr>
             </tbody>
           </table>
@@ -312,9 +313,9 @@ export function DavPrintView({
         </div>
       )}
 
-      {davConfig.texts.footer && (
+      {texts.footer && (
         <div className="mt-4 text-center italic text-gray-500 text-[9px] border-t border-dashed pt-2">
-          {davConfig.texts.footer}
+          {texts.footer}
         </div>
       )}
     </div>
