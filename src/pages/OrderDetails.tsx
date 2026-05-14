@@ -32,6 +32,8 @@ import {
   Edit,
   Clock,
   CheckCircle2,
+  Plus,
+  Minus,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { DavPrintView } from '@/components/DavPrintView'
@@ -319,79 +321,186 @@ export default function OrderDetails() {
                         variant="outline"
                         size="sm"
                         onClick={handleStartEdit}
-                        className="text-maxpet-blue border-maxpet-blue bg-white"
+                        className="text-maxpet-blue border-maxpet-blue bg-white shadow-sm"
                       >
-                        <Edit className="w-4 h-4 mr-2" /> Editar Itens
+                        <Edit className="w-4 h-4 mr-2" /> Editar Itens do Pedido
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col bg-white">
                       <DialogHeader>
                         <DialogTitle>Editar Itens do Pedido</DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4 py-4">
+                      <div className="py-2">
+                        <Input
+                          placeholder="Buscar produto por nome ou código para adicionar..."
+                          className="w-full bg-gray-50 border-gray-300"
+                          onChange={(e) => {
+                            const val = e.target.value.toLowerCase()
+                            const els = document.querySelectorAll('.edit-product-item')
+                            els.forEach((el) => {
+                              const text = el.getAttribute('data-search') || ''
+                              if (val.length === 0) {
+                                if (el.getAttribute('data-in-cart') === 'true') {
+                                  ;(el as HTMLElement).style.display = 'flex'
+                                } else {
+                                  ;(el as HTMLElement).style.display = 'none'
+                                }
+                              } else {
+                                if (text.includes(val)) {
+                                  ;(el as HTMLElement).style.display = 'flex'
+                                } else {
+                                  ;(el as HTMLElement).style.display = 'none'
+                                }
+                              }
+                            })
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-4 py-4 flex-1 overflow-y-auto">
                         {products.map((p: any) => {
                           const item = editingCart.find((i) => i.productId === p.id)
                           const qty = item?.quantity || 0
+                          const inCart = qty > 0
                           return (
                             <div
                               key={p.id}
-                              className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
+                              className="edit-product-item flex flex-col p-4 border border-gray-200 rounded-xl bg-white shadow-sm transition-all"
+                              data-search={`${p.name.toLowerCase()} ${p.code}`}
+                              data-in-cart={inCart.toString()}
+                              style={{ display: inCart ? 'flex' : 'none' }}
                             >
-                              <div>
-                                <p className="font-bold">
-                                  <span className="text-gray-400 font-normal mr-1">
-                                    #{String(p?.code || '').padStart(4, '0')}
-                                  </span>
-                                  {p.name} {p.size}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Min: {formatCurrency(p.unitPriceMin)} | Estoque: {p.stock}
-                                </p>
-                              </div>
-                              <div className="flex gap-4 items-center">
+                              <div className="flex items-start justify-between w-full">
                                 <div>
-                                  <p className="text-xs mb-1">Qtd</p>
-                                  <Input
-                                    type="number"
-                                    className="w-20 h-9"
-                                    value={qty || ''}
-                                    placeholder="0"
-                                    onChange={(e) =>
-                                      updateEditCart(
-                                        p.id,
-                                        parseInt(e.target.value) || 0,
-                                        item?.unitPrice || p.unitPriceMin,
-                                      )
-                                    }
-                                  />
+                                  <p className="font-bold text-maxpet-navy text-lg leading-tight">
+                                    <span className="text-gray-400 font-normal mr-1">
+                                      #{String(p?.code || '').padStart(4, '0')}
+                                    </span>
+                                    {p.name} {p.size}
+                                  </p>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    Ref: {formatCurrency(p.unitPriceMin)} a{' '}
+                                    {formatCurrency(p.unitPriceMilheiro)}/un | Estoque: {p.stock}
+                                  </p>
                                 </div>
-                                {qty > 0 && (
-                                  <div>
-                                    <p className="text-xs mb-1">R$ Unit</p>
+                                <div className="flex gap-4 items-center">
+                                  <div className="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden shadow-sm">
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-10 w-10 text-maxpet-navy hover:bg-gray-100 rounded-none border-r border-gray-200"
+                                      onClick={() => {
+                                        const step = qty > 100 ? 100 : 25
+                                        const newQty = Math.max(0, qty - step)
+                                        updateEditCart(
+                                          p.id,
+                                          newQty < p.minQuantity && newQty > 0 ? 0 : newQty,
+                                          item?.unitPrice || p.unitPriceMin,
+                                        )
+                                      }}
+                                    >
+                                      <Minus size={16} />
+                                    </Button>
                                     <Input
                                       type="number"
-                                      step="0.01"
-                                      className="w-24 h-9"
-                                      value={item?.unitPrice || ''}
+                                      className="w-20 h-10 border-0 text-center font-black bg-transparent focus-visible:ring-0 text-lg"
+                                      value={qty || ''}
+                                      placeholder="0"
                                       onChange={(e) =>
-                                        updateEditCart(p.id, qty, parseFloat(e.target.value))
+                                        updateEditCart(
+                                          p.id,
+                                          parseInt(e.target.value) || 0,
+                                          item?.unitPrice || p.unitPriceMin,
+                                        )
                                       }
                                     />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-10 w-10 text-maxpet-navy hover:bg-gray-100 rounded-none border-l border-gray-200"
+                                      onClick={() => {
+                                        const step = qty >= 100 ? 100 : 25
+                                        const newQty = qty === 0 ? p.minQuantity : qty + step
+                                        updateEditCart(
+                                          p.id,
+                                          newQty,
+                                          item?.unitPrice || p.unitPriceMin,
+                                        )
+                                      }}
+                                    >
+                                      <Plus size={16} />
+                                    </Button>
                                   </div>
-                                )}
+                                  {qty > 0 && (
+                                    <div>
+                                      <p className="text-xs mb-1 text-gray-500 font-bold uppercase">
+                                        R$ Unidade (Final)
+                                      </p>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        className="w-28 h-10 font-bold text-maxpet-blue bg-white border-gray-300 shadow-sm"
+                                        value={item?.unitPrice || ''}
+                                        onChange={(e) =>
+                                          updateEditCart(p.id, qty, parseFloat(e.target.value) || 0)
+                                        }
+                                      />
+                                    </div>
+                                  )}
+                                </div>
                               </div>
+                              {qty > 0 && (
+                                <div className="mt-4 pt-3 border-t border-gray-100 grid grid-cols-3 gap-3">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className={`h-auto py-2 whitespace-normal leading-tight transition-all border-2 ${item?.unitPrice === p.unitPriceMin ? 'bg-maxpet-blue border-maxpet-blue text-white shadow-md' : 'bg-white border-gray-200 hover:border-maxpet-blue hover:text-maxpet-blue text-gray-600'}`}
+                                    onClick={() => updateEditCart(p.id, qty, p.unitPriceMin)}
+                                  >
+                                    <span className="font-bold block mb-1">Unidade</span>
+                                    {formatCurrency(p.unitPriceMin)}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className={`h-auto py-2 whitespace-normal leading-tight transition-all border-2 ${item?.unitPrice === p.unitPriceCento ? 'bg-maxpet-blue border-maxpet-blue text-white shadow-md' : 'bg-white border-gray-200 hover:border-maxpet-blue hover:text-maxpet-blue text-gray-600'}`}
+                                    onClick={() => updateEditCart(p.id, qty, p.unitPriceCento)}
+                                  >
+                                    <span className="font-bold block mb-1">Cento</span>
+                                    {formatCurrency(p.unitPriceCento)}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className={`h-auto py-2 whitespace-normal leading-tight transition-all border-2 ${item?.unitPrice === p.unitPriceMilheiro ? 'bg-maxpet-blue border-maxpet-blue text-white shadow-md' : 'bg-white border-gray-200 hover:border-maxpet-blue hover:text-maxpet-blue text-gray-600'}`}
+                                    onClick={() => updateEditCart(p.id, qty, p.unitPriceMilheiro)}
+                                  >
+                                    <span className="font-bold block mb-1">Milheiro</span>
+                                    {formatCurrency(p.unitPriceMilheiro)}
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           )
                         })}
                       </div>
-                      <div className="flex justify-between items-center border-t pt-4">
-                        <span className="font-black text-xl text-maxpet-navy">
+                      <div className="flex justify-between items-center border-t pt-4 mt-auto">
+                        <span className="font-black text-2xl text-maxpet-navy">
                           Total:{' '}
-                          {formatCurrency(
-                            editingCart.reduce((a, i) => a + i.quantity * i.unitPrice, 0),
-                          )}
+                          <span className="text-maxpet-green">
+                            {formatCurrency(
+                              editingCart.reduce((a, i) => a + i.quantity * i.unitPrice, 0),
+                            )}
+                          </span>
                         </span>
-                        <Button onClick={handleSaveItems} className="bg-maxpet-green text-white">
+                        <Button
+                          onClick={handleSaveItems}
+                          className="bg-maxpet-green hover:bg-green-600 text-white h-12 px-8 text-lg shadow-md font-bold"
+                        >
                           Salvar Alterações
                         </Button>
                       </div>

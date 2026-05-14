@@ -45,6 +45,7 @@ export function DavPrintView({
   return (
     <div
       className={`hidden print:block fixed inset-0 bg-white z-[9999] text-black font-sans leading-tight ${isThermal ? 'w-[80mm] p-2 text-[9px]' : 'p-8 text-[11px]'}`}
+      style={{ backgroundColor: 'white' }}
     >
       {/* Cabeçalho */}
       {activeBlocks.header && (
@@ -55,7 +56,16 @@ export function DavPrintView({
             className={`${isThermal ? 'w-full text-center' : 'w-1/4'} flex items-center justify-center`}
           >
             {settings?.logoUrl ? (
-              <img src={settings.logoUrl} className="max-h-16 object-contain" alt="Logo" />
+              <img
+                src={settings.logoUrl}
+                style={{
+                  height: `${(davConfig?.layout?.logoSize || 100) * 0.64}px`,
+                  maxHeight: '150px',
+                  width: 'auto',
+                  objectFit: 'contain',
+                }}
+                alt="Logo"
+              />
             ) : (
               <span className="font-black italic text-lg">MaxPET</span>
             )}
