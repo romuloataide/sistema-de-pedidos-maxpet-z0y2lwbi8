@@ -209,16 +209,16 @@ export function DavSettings({ companyId }: { companyId?: string }) {
               </Select>
             </div>
             <div className="space-y-3">
-              <Label>Tamanho da Logo (%)</Label>
+              <Label>Altura da Logo (px)</Label>
               <Input
                 type="number"
-                min="50"
-                max="200"
+                min="30"
+                max="400"
                 value={config.layout?.logoSize ?? 100}
                 onChange={(e) => updateLayout('logoSize', parseInt(e.target.value) || 100)}
               />
               <p className="text-xs text-gray-500">
-                Ajuste o tamanho de 50 a 200 para escalar a logo no cabeçalho.
+                Ajuste a altura da logo em pixels (ex: 100) para o cabeçalho.
               </p>
             </div>
           </CardContent>

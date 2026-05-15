@@ -64,22 +64,46 @@ export default function Products() {
     e.preventDefault()
     if (!editing) return
 
-    if (isNew) {
-      await addProduct(editing as Omit<Product, 'id'>)
-      toast({ title: 'Produto Adicionado' })
-    } else {
-      await updateProduct(editing.id as string, editing)
-      // Garantir atualização de campos adicionais no banco
-      await supabase
-        .from('products')
-        .update({
-          unit_cost: (editing as any).unit_cost || 0,
-          code: (editing as any).code,
-        })
-        .eq('id', editing.id)
-      toast({ title: 'Produto Atualizado' })
+    try {
+      if (isNew) {
+        await addProduct(editing as Omit<Product, 'id'>)
+
+        // Garantir persistência do código e custo unitário
+        const { data } = await supabase
+          .from('products')
+          .select('id')
+          .eq('name', editing.name)
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (data?.[0]) {
+          await supabase
+            .from('products')
+            .update({
+              code: (editing as any).code,
+              unit_cost: (editing as any).unit_cost || 0,
+            })
+            .eq('id', data[0].id)
+        }
+
+        toast({ title: 'Produto Adicionado' })
+        setTimeout(() => window.location.reload(), 500)
+      } else {
+        await updateProduct(editing.id as string, editing)
+        await supabase
+          .from('products')
+          .update({
+            unit_cost: (editing as any).unit_cost || 0,
+            code: (editing as any).code,
+          })
+          .eq('id', editing.id)
+        toast({ title: 'Produto Atualizado' })
+        setTimeout(() => window.location.reload(), 500)
+      }
+      setOpen(false)
+    } catch (err: any) {
+      toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' })
     }
-    setOpen(false)
   }
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -44,24 +44,24 @@ export function DavPrintView({
 
   return (
     <div
-      className={`hidden print:block fixed inset-0 bg-white z-[9999] text-black font-sans leading-tight ${isThermal ? 'w-[80mm] p-2 text-[9px]' : 'p-8 text-[11px]'}`}
-      style={{ backgroundColor: 'white' }}
+      className={`hidden print:block absolute top-0 left-0 right-0 min-h-screen bg-white z-[9999] text-black font-sans leading-tight ${isThermal ? 'w-[80mm] p-2 text-[9px]' : 'p-8 text-[11px]'}`}
+      style={{ backgroundColor: '#ffffff' }}
     >
       {/* Cabeçalho */}
       {activeBlocks.header && (
         <div
-          className={`flex ${isThermal ? 'flex-col gap-2' : 'justify-between'} border-2 border-black p-2 mb-2`}
+          className={`flex ${isThermal ? 'flex-col gap-2' : 'justify-between items-center'} border-2 border-black p-2 mb-2`}
         >
           <div
-            className={`${isThermal ? 'w-full text-center' : 'w-1/4'} flex items-center justify-center`}
+            className={`${isThermal ? 'w-full text-center' : 'w-auto'} flex items-center justify-center`}
           >
             {settings?.logoUrl ? (
               <img
                 src={settings.logoUrl}
                 style={{
-                  height: `${(davConfig?.layout?.logoSize || 100) * 0.64}px`,
-                  maxHeight: '150px',
+                  height: `${davConfig?.layout?.logoSize || 100}px`,
                   width: 'auto',
+                  maxWidth: '100%',
                   objectFit: 'contain',
                 }}
                 alt="Logo"
@@ -71,17 +71,17 @@ export function DavPrintView({
             )}
           </div>
           <div
-            className={`${isThermal ? 'w-full' : 'w-1/2'} text-center flex flex-col justify-center`}
+            className={`${isThermal ? 'w-full' : 'flex-1'} text-center flex flex-col justify-center px-4`}
           >
             <h1 className="font-bold text-sm uppercase">{settings?.companyName}</h1>
-            {settings?.address && <p>{settings.address}</p>}
+            {settings?.address && <p className="whitespace-pre-wrap">{settings.address}</p>}
             <p>
               CNPJ: {formatDocument(settings?.document || '')}{' '}
               {settings?.phone ? `| Tel: ${settings.phone}` : ''}
             </p>
           </div>
           <div
-            className={`${isThermal ? 'w-full border-t-2 mt-2 pt-2' : 'w-1/4 border-l-2 pl-2'} text-center border-black flex flex-col justify-center`}
+            className={`${isThermal ? 'w-full border-t-2 mt-2 pt-2' : 'w-auto border-l-2 pl-4 pr-2 whitespace-nowrap'} text-center border-black flex flex-col justify-center shrink-0`}
           >
             <h2 className="font-bold text-[10px] uppercase mb-1">Documento Auxiliar de Venda</h2>
             <p className="font-black text-lg">Nº {order?.shortId}</p>
